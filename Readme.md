@@ -20,14 +20,13 @@ make install
 
 ### How to run the analysis
 
-Explain here:
-
-- where to find data needed for your analysis or how to produce them
-- how to run you analysis: 
-   - Marlin processors to run ?
-   - ROOT macros to run ?
-   - Shell scripts ?
-   - Run the analysis on grid if you provide scripts for that
+1) cd scripts/run_DBD (or run_l5, run_s5)
+2) mkdir nung (for nung analysis)
+3) cd nung
+4) cp ../SKELTON/*.py .         // copy scripts to submit many jobs to a cpu cluster.
+5) (Edit conf.py if necessary)
+6) python makeSteeringFiles.py  // produce many steering files from the directory path specified in conf.py.
+7) python manyRun.py            // run the steering files created above.
 
 Example:
 
