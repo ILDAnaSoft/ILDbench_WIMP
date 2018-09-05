@@ -194,7 +194,8 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             TVector3 pv(px,py,pz);
             _data.mcp_phi[i]   = pv.Phi(); 
             //_data.mcp_theta[i] = pv.Theta(); // need to consider 2pi = 0.
-            _data.mcp_theta[i] = TMath::ATan(pv.Perp()/pz); 
+            //_data.mcp_theta[i] = TMath::ATan(pv.Perp()/pz); This doesn't work when pz<0. 
+            _data.mcp_theta[i] = (pz>0)?TMath::ATan(pv.Perp()/pz):TMath::ATan(pv.Perp()/pz)+TMath::Pi(); 
             _data.mcp_chrg[i]  = p->getCharge();
             _data.mcp_startx[i] = float(p->getVertex()[0]);
             _data.mcp_starty[i] = float(p->getVertex()[1]);
