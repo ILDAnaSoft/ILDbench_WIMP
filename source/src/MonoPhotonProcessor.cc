@@ -252,7 +252,8 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
                  TVector3 pv(px,py,pz);
                  _data.mcr_phi[i]   = pv.Phi(); 
                  //_data.mcr_theta[i] = pv.Theta(); // need to consider 2pi = 0.
-                 _data.mcr_theta[i] = TMath::ATan(pv.Perp()/pz); 
+                 //_data.mcr_theta[i] = TMath::ATan(pv.Perp()/pz); 
+                 _data.mcr_theta[i] = (pz>0)?TMath::ATan(pv.Perp()/pz):TMath::ATan(pv.Perp()/pz)+TMath::Pi(); 
                  _data.mcr_chrg[i]  = mcr->getCharge();
                  _data.mcr_pdg[i]   = mcr->getPDG();
                  _data.mcr_genstatus[i] = mcr->getGeneratorStatus();
@@ -273,7 +274,8 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             TVector3 pv(px,py,pz);
             _data.pfo_phi[i]   = pv.Phi(); 
             //_data.pfo_theta[i] = pv.Theta(); // need to consider 2pi = 0.
-            _data.pfo_theta[i] = TMath::ATan(pv.Perp()/pz); 
+            //_data.pfo_theta[i] = TMath::ATan(pv.Perp()/pz); 
+            _data.pfo_theta[i] = (pz>0)?TMath::ATan(pv.Perp()/pz):TMath::ATan(pv.Perp()/pz)+TMath::Pi(); 
             _data.pfo_chrg[i]  = p->getCharge();
             _data.pfo_pdg[i]   = p->getType();
         
