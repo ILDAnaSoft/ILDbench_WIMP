@@ -4,14 +4,20 @@ import os
 # samples will be chosen from the follwoing directory.
 #===== for l5 sample
 #LISTDIR="/hsm/ilc/grid/storm/prod/ilc/mc-opt-3/ild/dst-merged/500-TDR_ws/2f_Z_nuNg/ILD_l5_o1_v02/v02-00-01"
+#LISTDIR="/hsm/ilc/grid/storm/prod/ilc/mc-opt-3/ild/dst-merged/500-TDR_ws/2f_Z_bhabhaNg/ILD_l5_o1_v02/v02-00-01"
 #===== for s5 sample
 LISTDIR="/hsm/ilc/grid/storm/prod/ilc/mc-opt-3/ild/dst-merged/500-TDR_ws/2f_Z_nuNg/ILD_s5_o1_v02/v02-00-01"
+#LISTDIR="/hsm/ilc/grid/storm/prod/ilc/mc-opt-3/ild/dst-merged/500-TDR_ws/2f_Z_bhabhaNg/ILD_s5_o1_v02/v02-00-01"
 
 FILESUFFIX="slcio"
 # samples will be chosen by searching the follwoing label in the file names.
 PROCESSES=["nung"]
 #PROCESSES=["bhabhang"]
 #PROCESSES=["bhabhang","nung"]
+#PROCESSES=["nung.eL.pR"]
+#PROCESSES=["nung.eR.pL"]
+#PROCESSES=["bhabhang.eL.pR"]
+#PROCESSES=["bhabhang.eR.pL"]
 
 # geometry file
 #===== for l5 sample
@@ -23,7 +29,7 @@ GEARFILE="/cvmfs/ilc.desy.de/sw/ILDConfig/v02-00-01/StandardConfig/production/Ge
 nfilesInOneshot = 5; 
 
 # directory that includes template xml files. 
-TEMPLATEXMLORIGDIR = os.environ['MPDIR'] + "/run_s5/XML_TMPLATES"
+TEMPLATEXMLORIGDIR = os.environ['MPDIR'] + "/scripts/run_s5/XML_TMPLATES"
 #===== samples includes MCParticle (l5, s5 sample)
 TEMPLATEFILE       = "monophoton.xml"
 

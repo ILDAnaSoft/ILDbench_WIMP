@@ -19,6 +19,12 @@ make install
 ```
 
 ### How to run the analysis
+0) setup enviroment
+  a) source /path/to/ilcsoft/init_ilcsoft.sh
+  b) export MPDIR="$PWD"
+     export MARLIN_DLL="$MPDIR/MonoPhotonProcessors/lib/libMonoPhotonProcessors.so:$MARLIN_DLL"
+
+  For convenience, would be better to copy init_ilcsoft.sh to this directory and add b) into it.
 
 1) cd scripts/run_DBD (or run_l5, run_s5)
 2) mkdir nung (for nung analysis)

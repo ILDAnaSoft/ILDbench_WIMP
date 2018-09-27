@@ -21,7 +21,7 @@ GEARFILE="/cvmfs/ilc.desy.de/sw/ILDConfig/v01-16-p10_250/StandardConfig/current/
 nfilesInOneshot = 5; 
 
 # directory that includes template xml files. 
-TEMPLATEXMLORIGDIR = os.environ['MPDIR'] + "/run_DBD/XML_TMPLATES"
+TEMPLATEXMLORIGDIR = os.environ['MPDIR'] + "/scripts/run_DBD/XML_TMPLATES"
 #===== samples includes MCParticlesSkimmed (DBD sample)
 TEMPLATEFILE       = "monophoton_mcskim.xml"
 #===== samples includes MCParticle (l5, s5 sample)
