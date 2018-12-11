@@ -8,9 +8,9 @@ utils.makeDirectory(conf.LOGDIR)
 xmls = os.listdir(conf.XMLDIR)
 
 minIndex=0
-#maxIndex=len(xmls)
+maxIndex=len(xmls)
 #minIndex=2
-maxIndex=2
+#maxIndex=2
 
 for xml in xmls:
 	suffix = '.' + xml.split('.')[-1] # suffix = .slcio
