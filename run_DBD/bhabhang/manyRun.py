@@ -9,9 +9,9 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 minIndex=0
-#maxIndex=len(xmls)
+maxIndex=len(xmls)
 #minIndex=10
-maxIndex=1
+#maxIndex=1
 
 for xml in xmls:
 	suffix = '.' + xml.split('.')[-1] # suffix = .slcio
