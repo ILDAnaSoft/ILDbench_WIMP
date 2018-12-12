@@ -3,6 +3,7 @@
 
 Mono-photon WIMP search
 The analysis codes in this repository are originated from
+the macros developed by
 Moritz Habermehl for his PhD thesis and
 aiming for simplifying the analysis procedures as much as possible.
 
