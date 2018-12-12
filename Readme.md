@@ -2,8 +2,32 @@
 ## ILDbench_WIMP
 
 Mono-photon WIMP search
-The analysis codes in this repository originated from
-Moritz Habermehl for his PhD thesis.
+The analysis codes in this repository are originated from
+Moritz Habermehl for his PhD thesis and
+aiming for simplifying the analysis procedures as much as possible.
+
+3 steps for plots :
+
+1) Run MonoPhoton Processor in Marlin framework. This main function
+is to extract necessary variables and to keep them in convenient formats.
+This step converts slcio file to root file.
+Raw level data can be accessed from the output root file.
+The steering files to run this processor can be produced by python scripts in
+run_DBD, run_l5, run_s5 directories for multiple inputs files.
+
+2) Run analysis.C macro in ROOT framework. This macro is the main
+part of the analysis, which is based on the study by Moritz.
+This produces individual histograms that will be used as
+an ingredient for final plots. 
+This step is time-consuming and thus is intended to run once
+even if we wnat to decorate final plots later. This is why
+step2 and step3 are separated.
+In principle (and ideally), this step can be integrated into step1 and
+it will help to reduce analysis time for huge amount of data.
+
+3) Run plots/drawPlots.C macro in ROOT framework. This main function
+is to compile/decorate histgrams. 
+("Save as .C" doesn't work well for THStack objects at the time of this writing.)
 
 ### Installation
 
