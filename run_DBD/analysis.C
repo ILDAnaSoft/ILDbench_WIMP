@@ -97,17 +97,17 @@ void Event::process(string fname)
         // e+/e- pt distribution 
         if (abs(pfo_pdg[i])==11) { // select electron/positron 
           if (mcr_isoverlay[i])                outputs.hPt_ep_ol->Fill(p4.Pt());
-          else if (mcr_isOriginatedFromISR[i]) outputs.hPt_ep_isr->Fill(p4.Pt());
-          //else if ((mcr_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=10))||
-          //         (mcr_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=10)) ) outputs.hPt_ep_isr->Fill(p4.Pt());
+          //else if (mcr_isOriginatedFromISR[i]) outputs.hPt_ep_isr->Fill(p4.Pt());
+          else if ((mcp_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=11))||
+                   (mcp_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=11)) ) outputs.hPt_ep_isr->Fill(p4.Pt());
           else                                 outputs.hPt_ep_other->Fill(p4.Pt());
         }
         // Charged PFO except e+/e- pt distribution 
         else if (fabs(pfo_chrg[i])>0) { // select charged pfo 
           if (mcr_isoverlay[i])                outputs.hPt_pfo_ol->Fill(p4.Pt());
-          else if (mcr_isOriginatedFromISR[i]) outputs.hPt_pfo_isr->Fill(p4.Pt());
-          //else if ((mcr_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=10))||
-          //         (mcr_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=10)) ) outputs.hPt_pfo_isr->Fill(p4.Pt());
+          //else if (mcr_isOriginatedFromISR[i]) outputs.hPt_pfo_isr->Fill(p4.Pt());
+          else if ((mcp_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=11))||
+                   (mcp_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=11)) ) outputs.hPt_pfo_isr->Fill(p4.Pt());
           else                                 outputs.hPt_pfo_other->Fill(p4.Pt());
         }
 
@@ -130,7 +130,7 @@ void Event::process(string fname)
         }
 
         // V0 E distribution 
-        if (abs(pfo_pdg[i])==310||abs(pfo_pdg[i])==3122) { // select V0 
+        if (pfo_pdg[i]==310||pfo_pdg[i]==3122) { // select V0 
           if (mcr_isoverlay[i])                outputs.hE_V0_ol->Fill(pfo_e[i]);
           else                                 outputs.hE_V0_rest->Fill(pfo_e[i]);
         }
@@ -164,7 +164,7 @@ void Event::process(string fname)
           esum += pfo_e[i];
           //if (!(abs(pfo_pdg[i])==211||abs(pfo_pdg[i])==111||abs(pfo_pdg[i])==2112)) {
           //if (!(abs(pfo_pdg[i])==211||abs(pfo_pdg[i])==2112)) {
-          if (pfo_pdg[i]==22||abs(pfo_pdg[i])==11||abs(pfo_pdg[i])==13||pfo_pdg[i]==310||abs(pfo_pdg[i])==3122){
+          if (pfo_pdg[i]==22||abs(pfo_pdg[i])==11||abs(pfo_pdg[i])==13||pfo_pdg[i]==310||pfo_pdg[i]==3122){
             esum_wo_pi_n += pfo_e[i];
           }
         }
@@ -251,17 +251,17 @@ void analysis()
 
   // Define Event object which contains analyses methods and output histograms.
   Event nung;
-  nung.outputs.hE_photon           = new TH1F("hE_photon",";E [GeV/c];",300,0,300);
-  nung.outputs.hNrecNgen_photon    = new TH1F("hNrecNgen_photon",";# #gamma_{rec}/#gamma_{gen};",8,0,8);
-  nung.outputs.hNrecNgenEmc_photon = new TH2F("hNrecNgenEmc_photon",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",100,0,250,100,0,8);
-  nung.outputs.hNrecNgenCostheta_photon = new TH2F("hNrecNgenCostheta_photon",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",100,0,1,100,0,8);
+  nung.outputs.hE_photon           = new TH1F("hE_photon_nung",";E [GeV/c];",300,0,300);
+  nung.outputs.hNrecNgen_photon    = new TH1F("hNrecNgen_photon_nung",";# #gamma_{rec}/#gamma_{gen};",8,0,8);
+  nung.outputs.hNrecNgenEmc_photon = new TH2F("hNrecNgenEmc_photon_nung",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",100,0,250,100,0,8);
+  nung.outputs.hNrecNgenCostheta_photon = new TH2F("hNrecNgenCostheta_photon_nung",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",100,0,1,100,0,8);
 
-  nung.outputs.hPt_ep_isr             = new TH1F("hPt_ep_nung_isr"   ,";Pt [GeV/c];",250,0,250);
-  nung.outputs.hPt_ep_ol              = new TH1F("hPt_ep_nung_ol"    ,";Pt [GeV/c];",250,0,250);
-  nung.outputs.hPt_ep_other           = new TH1F("hPt_ep_nung_other" ,";Pt [GeV/c];",250,0,250);
-  nung.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_nung_isr"  ,";Pt [GeV/c];",250,0,250);
-  nung.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_nung_ol"   ,";Pt [GeV/c];",250,0,250);
-  nung.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_nung_other",";Pt [GeV/c];",250,0,250);
+  nung.outputs.hPt_ep_isr             = new TH1F("hPt_ep_nung_isr"   ,";Pt [GeV/c];",270,0,270);
+  nung.outputs.hPt_ep_ol              = new TH1F("hPt_ep_nung_ol"    ,";Pt [GeV/c];",270,0,270);
+  nung.outputs.hPt_ep_other           = new TH1F("hPt_ep_nung_other" ,";Pt [GeV/c];",270,0,270);
+  nung.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_nung_isr"  ,";Pt [GeV/c];",270,0,270);
+  nung.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_nung_ol"   ,";Pt [GeV/c];",270,0,270);
+  nung.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_nung_other",";Pt [GeV/c];",270,0,270);
   nung.outputs.hE_photon_rest         = new TH1F("hE_photon_nung_rest",";E [GeV];",350,0,350);
   nung.outputs.hE_photon_ol           = new TH1F("hE_photon_nung_ol",";E [GeV];",350,0,350);
   nung.outputs.hE_V0_rest             = new TH1F("hE_V0_nung_rest",";E [GeV];",350,0,350);
@@ -305,12 +305,12 @@ void analysis()
 
   // bhabha
   Event bhabhang;
-  bhabhang.outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhang_isr"   ,";Pt [GeV/c];",250,0,250);
-  bhabhang.outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhang_ol"    ,";Pt [GeV/c];",250,0,250);
-  bhabhang.outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhang_other" ,";Pt [GeV/c];",250,0,250);
-  bhabhang.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhang_isr"  ,";Pt [GeV/c];",250,0,250);
-  bhabhang.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhang_ol"   ,";Pt [GeV/c];",250,0,250);
-  bhabhang.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhang_other",";Pt [GeV/c];",250,0,250);
+  bhabhang.outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhang_isr"   ,";Pt [GeV/c];",270,0,270);
+  bhabhang.outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhang_ol"    ,";Pt [GeV/c];",270,0,270);
+  bhabhang.outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhang_other" ,";Pt [GeV/c];",270,0,270);
+  bhabhang.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhang_isr"  ,";Pt [GeV/c];",270,0,270);
+  bhabhang.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhang_ol"   ,";Pt [GeV/c];",270,0,270);
+  bhabhang.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhang_other",";Pt [GeV/c];",270,0,270);
   bhabhang.outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhang_rest",";E [GeV];",350,0,350);
   bhabhang.outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhang_ol",";E [GeV];",350,0,350);
   bhabhang.outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhang_electron",";E [GeV];",350,0,350);
@@ -416,7 +416,9 @@ void analysis()
   bhabhang.outputs.hNBcalClusters->Write();
   nung.outputs.hE_photon->Write();
   nung.outputs.hNrecNgen_photon->Write();
+  nung.outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nung");
   nung.outputs.gNrecNgenEmc_photon->Write();
+  nung.outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nung");
   nung.outputs.gNrecNgenCostheta_photon->Write();
 }
 
