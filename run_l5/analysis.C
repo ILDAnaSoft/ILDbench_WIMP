@@ -283,21 +283,21 @@ void analysis()
 
   int nmaxfiles_nung = 100; // Stop reading when a file doesn't exist. Specify a small number for testing.
   for (int i = 1; i <= nmaxfiles_nung; i++) {
-    { // nung LR
+      // nung LR
       stringstream fname;
       fname << "nung/root/l5_500GeV.nung.eL.pR_" << i << ".root" << ends;
       if (gSystem->AccessPathName(fname.str().data())) break;
       cerr << "Loading " << fname.str().data() << " ... " << endl;
       nung.process(fname.str().data());
-    }
+  }
 
-    { // nung RL
+  for (int i = 1; i <= nmaxfiles_nung; i++) {
+      // nung RL
       stringstream fname;
       fname << "nung/root/l5_500GeV.nung.eR.pL_" << i << ".root" << ends;
       if (gSystem->AccessPathName(fname.str().data())) break;
       cerr << "Loading " << fname.str().data() << " ... " << endl;
       nung.process(fname.str().data());
-    }
   }
 
   // do something after event loop.
@@ -339,7 +339,7 @@ void analysis()
       cerr << "Loading " << fname.str().data() << " ... " << endl;
       bhabhang.process(fname.str().data());
   }
-  for (int i = 1; i < nmaxfiles_bhabhang; i++) {
+  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
       // bhabhang LR
       stringstream fname;
       fname << "bhabhang/root/l5_500GeV.bhabhang.eL.pR_" << i << ".root" << ends;
@@ -347,7 +347,7 @@ void analysis()
       cerr << "Loading " << fname.str().data() << " ... " << endl;
       bhabhang.process(fname.str().data());
   }
-  for (int i = 1; i < nmaxfiles_bhabhang; i++) {
+  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
       // bhabhang RL
       stringstream fname;
       fname << "bhabhang/root/l5_500GeV.bhabhang.eR.pL_" << i << ".root" << ends;
@@ -355,7 +355,7 @@ void analysis()
       cerr << "Loading " << fname.str().data() << " ... " << endl;
       bhabhang.process(fname.str().data());
   }
-  for (int i = 1; i < nmaxfiles_bhabhang; i++) {
+  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
       // bhabhang RR
       stringstream fname;
       fname << "bhabhang/root/l5_500GeV.bhabhang.eR.pR_" << i << ".root" << ends;

@@ -1,8 +1,10 @@
 void drawPlots() {
 
-  gROOT->LoadMacro("/home/ilc/yonamine/work/MonoPhoton/Git/MonoPhoton/run_l5/plots/ildstyle.C");
-
-  TFile* fin = new TFile("/home/ilc/yonamine/work/MonoPhoton/Git/MonoPhoton/run_l5/plots/plots.root");
+  TString topDirPath(gSystem->GetFromPipe("echo $MPDIR")); // MPDIR should be defined in an init script.
+  TString styleMacroPath(topDirPath+"/macros/ildstyle.C");
+  TString rootFilePath(topDirPath+"/run_l5/plots/plots.root");
+  gROOT->LoadMacro(styleMacroPath.Data());
+  TFile* fin = new TFile(rootFilePath.Data());
 
   TH1F* hPt_ep_nung_other             = static_cast<TH1F*>(fin->Get("hPt_ep_nung_other"));
   TH1F* hPt_ep_nung_ol                = static_cast<TH1F*>(fin->Get("hPt_ep_nung_ol"));

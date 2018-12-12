@@ -2,6 +2,8 @@
 ## ILDbench_WIMP
 
 Mono-photon WIMP search
+The analysis codes in this repository originated from
+Moritz Habermehl for his PhD thesis.
 
 ### Installation
 
