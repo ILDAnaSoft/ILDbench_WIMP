@@ -239,6 +239,8 @@ class MonoPhotonProcessor : public Processor {
     float  bcal_z[NMAX_CLRS];
     float  bcal_phi[NMAX_CLRS];
     float  bcal_theta[NMAX_CLRS];
+    float  bcal_px_bcalcoord[NMAX_CLRS];
+    float  bcal_pt_bcalcoord[NMAX_CLRS];
   };
 
   EVTFILLDATA _data;

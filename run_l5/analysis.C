@@ -10,6 +10,7 @@
 using namespace std;
 
 #include "eventselection.C"
+#include "input.C"
 
 void signalhandler(int singal)
 {
@@ -17,408 +18,425 @@ void signalhandler(int singal)
   abort(); 
 }
 
-void Event::process(string fname)
-{
-  TFile fin(fname.c_str());
-  TTree* data = static_cast<TTree*>(fin.Get("evtdata"));
-
-  int nevents = data->GetEntries();
-
-  int nPhoton_MC = 0;
-  int nPhoton_Rec = 0;
-
-  // event loop
-  //nevents = 100; // for testing
-  //Event event(data);
-  SetTree(data);
-
-
-  _totalNEvt += nevents;
-  int nsignalevt = 0;
-  for (int ev = 0; ev < nevents; ev++) {
-
-    /*
-    // progress bar
-    if (ev==nevents-1) {
-      cerr << "\r" << fixed << setprecision(0) << "100 %" << flush;
-      cerr << setprecision(4) << endl;
-    }
-    else  cerr << "\r" << fixed << setprecision(0) << float(ev)/float(nevents)*100. << " %" << flush;
-    */
-
-    callGetEntry(ev);
-
-    // Efficinecy of ISR photon reconstcution
-    if (isAcceptableEvent(ev)) {
-      int nrec = 0;
-      for (int i = 0; i < npfos; i++) {
-        if (pfo_pdg[i]==22) {
-	   if (mcr_index[i] == getSignalIndex()) {
-	       nrec++;
-           } 
-        } 
-      } 
-      if (outputs.hNrecNgen_photon)         outputs.hNrecNgen_photon->Fill(nrec);        // Corresponds to 5.14     
-      if (outputs.hNrecNgenEmc_photon)      outputs.hNrecNgenEmc_photon->Fill(getSignalE(),nrec); // Corresponds to 5.15 (a)    
-      if (outputs.hNrecNgenCostheta_photon) outputs.hNrecNgenCostheta_photon->Fill(TMath::Cos(getSignalTheta()),nrec); // Corresponds to 5.15 (c)    
-    } 
-
-
-    bool isSignalEvt   = false;
-    for (int i = 0; i < npfos; i++) {
-
-      // Check if this event is signal like.
-      if (ptmaxphoton_theta > 7./180.*TMath::Pi() && ptmaxphoton_theta < 173./180.*TMath::Pi()) {
-        if ( (fabs(ptmaxphoton_phi_bcalcoord/TMath::Pi()*180.)>35. && ptmaxphoton_pt_bcalcoord>1.92 ) ||
-             (fabs(ptmaxphoton_phi_bcalcoord/TMath::Pi()*180.)<=35. && ptmaxphoton_pt_bcalcoord>5.65)  ) {
-          if (ptmaxphoton_e > 2.) {
-            if (outputs.hE_photon) outputs.hE_photon->Fill(ptmaxphoton_e); // Before max energy cut. Corresponds to Fig 5.8     
-            if (ptmaxphoton_e < 220.) {
-            //if (ptmaxphoton_e < 1000.) {
-              isSignalEvt = true;
-              //cerr << "This event has signal." << endl;
-            } // Max energy cut 
-          } // Min energy cut
-        } // Pt_max cut depending on |phi| in bcal coordinates.
-      } // theta restriction
-
-    } // PFO loop
-
-    if (isSignalEvt) _signalNEvt++;
-
-    //if (!isPassedECut(ev)) continue; 
-
-    // Do something only when this event is signal-like.
-    if (isSignalEvt) {
-
-
-      for (int i = 0; i < npfos; i++) {
-        TLorentzVector p4(pfo_px[i],pfo_py[i],pfo_pz[i],pfo_e[i]);
-        // e+/e- pt distribution 
-        if (abs(pfo_pdg[i])==11) { // select electron/positron 
-          if (mcr_isoverlay[i])                outputs.hPt_ep_ol->Fill(p4.Pt());
-          //else if (mcr_isOriginatedFromISR[i]) outputs.hPt_ep_isr->Fill(p4.Pt());
-          else if ((mcp_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=11))||
-                   (mcp_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=11)) ) outputs.hPt_ep_isr->Fill(p4.Pt());
-          else                                 outputs.hPt_ep_other->Fill(p4.Pt());
-        }
-        // Charged PFO except e+/e- pt distribution 
-        else if (fabs(pfo_chrg[i])>0) { // select charged pfo 
-          if (mcr_isoverlay[i])                outputs.hPt_pfo_ol->Fill(p4.Pt());
-          //else if (mcr_isOriginatedFromISR[i]) outputs.hPt_pfo_isr->Fill(p4.Pt());
-          else if ((mcp_pdg[mcr_parentIndex[i][0]]==22&&(mcr_parentIndex[i][0]>=8&&mcr_parentIndex[i][0]<=11))||
-                   (mcp_pdg[mcr_parentIndex[i][1]]==22&&(mcr_parentIndex[i][1]>=8&&mcr_parentIndex[i][1]<=11)) ) outputs.hPt_pfo_isr->Fill(p4.Pt());
-          else                                 outputs.hPt_pfo_other->Fill(p4.Pt());
-        }
-
-      }
-
-      if (!isPassedPtCut(ev)) continue; 
-
-      // pfo loop
-      float esum         = 0.;
-      float esum_wo_pi_n = 0.;
-      for (int i = 0; i < npfos; i++) {
-
-        // photon E distribution 
-        //if (abs(pfo_pdg[i])==22&&!mcr_isOriginatedFromISR[i]) { // select photon 
-        //if (abs(pfo_pdg[i])==22&&!(mcr_index[i]>=8&&mcr_index[i]<=10)) { // select photon 
-        if (abs(pfo_pdg[i])==22&& i != ptmaxphoton_index ) { // select photon 
-          if (mcr_isoverlay[i])                outputs.hE_photon_ol->Fill(pfo_e[i]);
-          else if (outputs.hE_photon_electron && abs(mcr_pdg[i])==11) outputs.hE_photon_electron->Fill(pfo_e[i]);// for bhabha only 
-          else                                 outputs.hE_photon_rest->Fill(pfo_e[i]);
-        }
-
-        // V0 E distribution 
-        if (pfo_pdg[i]==310||pfo_pdg[i]==3122) { // select V0 
-          if (mcr_isoverlay[i])                outputs.hE_V0_ol->Fill(pfo_e[i]);
-          else                                 outputs.hE_V0_rest->Fill(pfo_e[i]);
-        }
-
-        // neutron E distribution 
-        if (abs(pfo_pdg[i])==2112) { // select neutron 
-          if (mcr_isoverlay[i])                outputs.hE_neutron_ol->Fill(pfo_e[i]);
-          else                                 outputs.hE_neutron_rest->Fill(pfo_e[i]);
-        }
-
-        // electron E distribution 
-        if (abs(pfo_pdg[i])==11) { // select electron 
-          if (mcr_isoverlay[i])                outputs.hE_electron_ol->Fill(pfo_e[i]);
-          else                                 outputs.hE_electron_rest->Fill(pfo_e[i]);
-        }
-
-        // muon E distribution 
-        if (abs(pfo_pdg[i])==13) { // select muon 
-          if (mcr_isoverlay[i])                outputs.hE_muon_ol->Fill(pfo_e[i]);
-          else                                 outputs.hE_muon_rest->Fill(pfo_e[i]);
-        }
-
-        // pion E distribution 
-        if (abs(pfo_pdg[i])==211) { // select pion 
-          if (mcr_isoverlay[i])                outputs.hE_pion_ol->Fill(pfo_e[i]);
-          else                                 outputs.hE_pion_rest->Fill(pfo_e[i]);
-        }
-
-        // Compute energy sum except for ptmaxphoton.
-        if (pfo_e[i]>5. && i != ptmaxphoton_index ) { // individual energy cut
-          esum += pfo_e[i];
-          //if (!(abs(pfo_pdg[i])==211||abs(pfo_pdg[i])==111||abs(pfo_pdg[i])==2112)) {
-          //if (!(abs(pfo_pdg[i])==211||abs(pfo_pdg[i])==2112)) {
-          if (pfo_pdg[i]==22||abs(pfo_pdg[i])==11||abs(pfo_pdg[i])==13||pfo_pdg[i]==310||pfo_pdg[i]==3122){
-            esum_wo_pi_n += pfo_e[i];
-          }
-        }
-      }
-      outputs.hEvis_pfo->Fill(esum);
-      outputs.hEvis_pfo_wo_pi_n->Fill(esum_wo_pi_n);
-
-
-      if (isPassedECut(ev) && getNPhotons()>0) { 
-
-        //cerr << "passed event. ev = " << ev << endl;
-        outputs.hNBcalClusters->Fill(nbcalclrs);
-        if (getNISRPhotons()==1) outputs.hNBcalClusters1ISR->Fill(nbcalclrs);
-        else if (getNISRPhotons()>=0) outputs.hNBcalClustersMultiISR->Fill(nbcalclrs); // this is different from the original Moritz's macro.
-      }
-
-    }
-
-
-  } // event loop
-}
-
-void Event::processAfterEventLoop()
-{
-  if (outputs.hNrecNgenEmc_photon&&outputs.hNrecNgenCostheta_photon) { 
-    const int    xbins_e = outputs.hNrecNgenEmc_photon->GetNbinsX();
-    double x_min_e = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinLowEdge(1);
-    double x_max_e = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinUpEdge(xbins_e);
-    const int    ybins_e = outputs.hNrecNgenEmc_photon->GetNbinsY();
-    double y_min_e = outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinLowEdge(1);
-    double y_max_e = outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinUpEdge(ybins_e);
-    const int    xbins_cos = outputs.hNrecNgenCostheta_photon->GetNbinsX();
-    double x_min_cos = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinLowEdge(1);
-    double x_max_cos = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinUpEdge(xbins_cos);
-    const int    ybins_cos = outputs.hNrecNgenCostheta_photon->GetNbinsY();
-    double y_min_cos = outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinLowEdge(1);
-    double y_max_cos = outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinUpEdge(ybins_cos);
-
-    double x_e[xbins_e], xerr_e[xbins_e], y_e[xbins_e], yerr_e[xbins_e];
-    for (int ix = 1; ix <= xbins_e; ix++) {
-      x_e[ix] = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinCenter(ix);
-      xerr_e[ix] = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinWidth(ix)/TMath::Sqrt(12);
-      TH1F h_y_e("h_y_e","",ybins_e,y_min_e,y_max_e);
-      for (int iy = 1; iy <= ybins_e; iy++) {
-        for (int icontent = 0; icontent < outputs.hNrecNgenEmc_photon->GetBinContent(ix,iy); icontent++) {
-          h_y_e.Fill(outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinCenter(iy)); 
-        }
-      }
-      y_e[ix] = h_y_e.GetMean();
-      yerr_e[ix] = h_y_e.GetRMS() / TMath::Sqrt(h_y_e.GetEntries());
-      //yerr_e[ix] = TMath::Sqrt(h_y_e.GetRMS()*h_y_e.GetRMS()-h_y_e.GetMean()*h_y_e.GetMean()) / TMath::Sqrt(h_y_e.GetEntries());
-    }
-    outputs.gNrecNgenEmc_photon = new TGraphErrors(xbins_e,x_e,y_e,xerr_e,yerr_e);
-    outputs.gNrecNgenEmc_photon->SetTitle(";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}");
-
-    double x_cos[xbins_cos], xerr_cos[xbins_cos], y_cos[xbins_cos], yerr_cos[xbins_cos];
-    for (int ix = 1; ix <= xbins_cos; ix++) {
-      x_cos[ix] = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinCenter(ix);
-      xerr_cos[ix] = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinWidth(ix)/TMath::Sqrt(12);
-      TH1F h_y_cos("h_y_cos","",ybins_cos,y_min_cos,y_max_cos);
-      for (int iy = 1; iy <= ybins_cos; iy++) {
-        for (int icontent = 0; icontent < outputs.hNrecNgenCostheta_photon->GetBinContent(ix,iy); icontent++) {
-          h_y_cos.Fill(outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinCenter(iy)); 
-        }
-      }
-      y_cos[ix] = h_y_cos.GetMean();
-      yerr_cos[ix] = h_y_cos.GetRMS() / TMath::Sqrt(h_y_cos.GetEntries());
-      //yerr_cos[ix] = TMath::Sqrt(h_y_cos.GetRMS()*h_y_cos.GetRMS()-h_y_cos.GetMean()*h_y_cos.GetMean()) / TMath::Sqrt(h_y_cos.GetEntries());
-      //y_cos[ix] = fitfunc.GetParameter(1);
-      //yerr_cos[ix] = fitfunc.GetParameter(2)/TMath::Sqrt(h_y_cos.GetEntries());
-    }
-    outputs.gNrecNgenCostheta_photon = new TGraphErrors(xbins_cos,x_cos,y_cos,xerr_cos,yerr_cos);
-    outputs.gNrecNgenCostheta_photon->SetTitle(";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}");
-
-
-    cerr << "Total N events = " << _totalNEvt << endl;
-    cerr << "Singal Efficincy = " << float(_signalNEvt)/float(_totalNEvt) << endl;
-  }
-}
-
+// This is the main macro producing basic histograms.
+// "Event" object is a holder of relevant data e.g. definition of histgrams, inputfiles.
+// We will create 6 Event objects : nung(LR/RL), bhabhang(LL/LR/RL/RR) so that
+// we can multiply event weight for each polarization later.
+// See Event::process() in eventselection.C for the actual analysis.
 void analysis()
 {
   signal(SIGINT,signalhandler);
-
   // Define Event object which contains analyses methods and output histograms.
-  Event nung;
-  nung.outputs.hE_photon           = new TH1F("hE_photon_nung",";E [GeV/c];",300,0,300);
-  nung.outputs.hNrecNgen_photon    = new TH1F("hNrecNgen_photon_nung",";# #gamma_{rec}/#gamma_{gen};",8,0,8);
-  nung.outputs.hNrecNgenEmc_photon = new TH2F("hNrecNgenEmc_photon_nung",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",100,0,250,100,0,8);
-  nung.outputs.hNrecNgenCostheta_photon = new TH2F("hNrecNgenCostheta_photon_nung",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",100,0,1,100,0,8);
+  Event* EnungLR = new Event;
+  EnungLR->setProcessType(nungLR);
+  EnungLR->outputs.hCutStats           = new TH1F("hCutStats_nungLR",";;",5,0,5);
+  EnungLR->outputs.hE_photon           = new TH1F("hE_photon_nungLR",";E [GeV/c];",300,0,300);
+  EnungLR->outputs.hNrecNgen_photon    = new TH1F("hNrecNgen_photon_nungLR",";# #gamma_{rec}/#gamma_{gen};",8,0,8);
+  EnungLR->outputs.hNrecNgenEmc_photon = new TH2F("hNrecNgenEmc_photon_nungLR",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",100,0,250,100,0,8);
+  EnungLR->outputs.hNrecNgenCostheta_photon = new TH2F("hNrecNgenCostheta_photon_nungLR",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",100,0,1,100,0,8);
 
-  nung.outputs.hPt_ep_isr             = new TH1F("hPt_ep_nung_isr"   ,";Pt [GeV/c];",270,0,270);
-  nung.outputs.hPt_ep_ol              = new TH1F("hPt_ep_nung_ol"    ,";Pt [GeV/c];",270,0,270);
-  nung.outputs.hPt_ep_other           = new TH1F("hPt_ep_nung_other" ,";Pt [GeV/c];",270,0,270);
-  nung.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_nung_isr"  ,";Pt [GeV/c];",270,0,270);
-  nung.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_nung_ol"   ,";Pt [GeV/c];",270,0,270);
-  nung.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_nung_other",";Pt [GeV/c];",270,0,270);
-  nung.outputs.hE_photon_rest         = new TH1F("hE_photon_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_photon_ol           = new TH1F("hE_photon_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hE_V0_rest             = new TH1F("hE_V0_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_V0_ol               = new TH1F("hE_V0_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hE_neutron_rest        = new TH1F("hE_neutron_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_neutron_ol          = new TH1F("hE_neutron_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hE_electron_rest       = new TH1F("hE_electron_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_electron_ol         = new TH1F("hE_electron_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hE_muon_rest           = new TH1F("hE_muon_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_muon_ol             = new TH1F("hE_muon_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hE_pion_rest           = new TH1F("hE_pion_nung_rest",";E [GeV];",350,0,350);
-  nung.outputs.hE_pion_ol             = new TH1F("hE_pion_nung_ol",";E [GeV];",350,0,350);
-  nung.outputs.hEvis_pfo              = new TH1F("hEvis_pfo_nung",";E [GeV];",750,0,750);
-  nung.outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_nung",";E [GeV];",750,0,750);
-  nung.outputs.hNBcalClusters         = new TH1F("hNBcalClusters_nung",";# of BCal clusters;",6,0,6);
-  nung.outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_nung",";# of BCal clusters;",6,0,6);
-  nung.outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_nung",";# of BCal clusters;",6,0,6);
-
-
-  int nmaxfiles_nung = 100; // Stop reading when a file doesn't exist. Specify a small number for testing.
-  for (int i = 1; i <= nmaxfiles_nung; i++) {
-      // nung LR
-      stringstream fname;
-      fname << "nung/root/l5_500GeV.nung.eL.pR_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      nung.process(fname.str().data());
-  }
-
-  for (int i = 1; i <= nmaxfiles_nung; i++) {
-      // nung RL
-      stringstream fname;
-      fname << "nung/root/l5_500GeV.nung.eR.pL_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      nung.process(fname.str().data());
-  }
-
+  EnungLR->outputs.hPt_ep_isr             = new TH1F("hPt_ep_nungLR_isr"   ,";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hPt_ep_ol              = new TH1F("hPt_ep_nungLR_ol"    ,";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hPt_ep_other           = new TH1F("hPt_ep_nungLR_other" ,";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_nungLR_isr"  ,";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_nungLR_ol"   ,";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_nungLR_other",";Pt [GeV/c];",270,0,270);
+  EnungLR->outputs.hE_photon_rest         = new TH1F("hE_photon_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_photon_ol           = new TH1F("hE_photon_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_V0_rest             = new TH1F("hE_V0_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_V0_ol               = new TH1F("hE_V0_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_neutron_rest        = new TH1F("hE_neutron_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_neutron_ol          = new TH1F("hE_neutron_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_electron_rest       = new TH1F("hE_electron_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_electron_ol         = new TH1F("hE_electron_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_muon_rest           = new TH1F("hE_muon_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_muon_ol             = new TH1F("hE_muon_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_pion_rest           = new TH1F("hE_pion_nungLR_rest",";E [GeV];",350,0,350);
+  EnungLR->outputs.hE_pion_ol             = new TH1F("hE_pion_nungLR_ol",";E [GeV];",350,0,350);
+  EnungLR->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_nungLR",";E [GeV];",750,0,750);
+  EnungLR->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_nungLR",";E [GeV];",750,0,750);
+  EnungLR->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_nungLR",";# of BCal clusters;",6,0,6);
+  EnungLR->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_nungLR",";# of BCal clusters;",6,0,6);
+  EnungLR->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_nungLR",";# of BCal clusters;",6,0,6);
+  EnungLR->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_nungLR",";Pt [GeV];",100,0,20);
+  EnungLR->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_nungLR",";Pt [GeV];",100,0,20);
+  EnungLR->outputs.hPt_bcal               = new TH1F("hPt_bcal_nungLR",";Pt [GeV];",100,0,20);
+  EnungLR->outputs.hE_bcal                = new TH1F("hE_bcal_nungLR",";E [GeV];",350,0,350);
+ 
+  SetInputFiles(EnungLR); // see input.C
+  EnungLR->process();
   // do something after event loop.
-  nung.processAfterEventLoop();
+  EnungLR->processAfterEventLoop();
+
+
+  Event* EnungRL = new Event;
+  EnungRL->setProcessType(nungRL);
+  EnungRL->outputs.hCutStats           = new TH1F("hCutStats_nungRL",";;",5,0,5);
+  EnungRL->outputs.hE_photon           = new TH1F("hE_photon_nungRL",";E [GeV/c];",300,0,300);
+  EnungRL->outputs.hNrecNgen_photon    = new TH1F("hNrecNgen_photon_nungRL",";# #gamma_{rec}/#gamma_{gen};",8,0,8);
+  EnungRL->outputs.hNrecNgenEmc_photon = new TH2F("hNrecNgenEmc_photon_nungRL",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",100,0,250,100,0,8);
+  EnungRL->outputs.hNrecNgenCostheta_photon = new TH2F("hNrecNgenCostheta_photon_nungRL",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",100,0,1,100,0,8);
+
+  EnungRL->outputs.hPt_ep_isr             = new TH1F("hPt_ep_nungRL_isr"   ,";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hPt_ep_ol              = new TH1F("hPt_ep_nungRL_ol"    ,";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hPt_ep_other           = new TH1F("hPt_ep_nungRL_other" ,";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_nungRL_isr"  ,";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_nungRL_ol"   ,";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_nungRL_other",";Pt [GeV/c];",270,0,270);
+  EnungRL->outputs.hE_photon_rest         = new TH1F("hE_photon_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_photon_ol           = new TH1F("hE_photon_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_V0_rest             = new TH1F("hE_V0_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_V0_ol               = new TH1F("hE_V0_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_neutron_rest        = new TH1F("hE_neutron_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_neutron_ol          = new TH1F("hE_neutron_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_electron_rest       = new TH1F("hE_electron_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_electron_ol         = new TH1F("hE_electron_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_muon_rest           = new TH1F("hE_muon_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_muon_ol             = new TH1F("hE_muon_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_pion_rest           = new TH1F("hE_pion_nungRL_rest",";E [GeV];",350,0,350);
+  EnungRL->outputs.hE_pion_ol             = new TH1F("hE_pion_nungRL_ol",";E [GeV];",350,0,350);
+  EnungRL->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_nungRL",";E [GeV];",750,0,750);
+  EnungRL->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_nungRL",";E [GeV];",750,0,750);
+  EnungRL->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_nungRL",";# of BCal clusters;",6,0,6);
+  EnungRL->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_nungRL",";# of BCal clusters;",6,0,6);
+  EnungRL->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_nungRL",";# of BCal clusters;",6,0,6);
+  EnungRL->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_nungRL",";Pt [GeV];",100,0,20);
+  EnungRL->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_nungRL",";Pt [GeV];",100,0,20);
+  EnungRL->outputs.hPt_bcal               = new TH1F("hPt_bcal_nungRL",";Pt [GeV];",100,0,20);
+  EnungRL->outputs.hE_bcal                = new TH1F("hE_bcal_nungRL",";E [GeV];",350,0,350);
+
+  SetInputFiles(EnungRL); // see input.C
+  EnungRL->process();
+  // do something after event loop.
+  EnungRL->processAfterEventLoop();
 
   // bhabha
-  Event bhabhang;
-  bhabhang.outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhang_isr"   ,";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhang_ol"    ,";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhang_other" ,";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhang_isr"  ,";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhang_ol"   ,";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhang_other",";Pt [GeV/c];",270,0,270);
-  bhabhang.outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhang_electron",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_V0_rest             = new TH1F("hE_V0_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_V0_ol               = new TH1F("hE_V0_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_neutron_rest        = new TH1F("hE_neutron_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_neutron_ol          = new TH1F("hE_neutron_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_electron_rest       = new TH1F("hE_electron_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_electron_ol         = new TH1F("hE_electron_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_muon_rest           = new TH1F("hE_muon_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_muon_ol             = new TH1F("hE_muon_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_pion_rest           = new TH1F("hE_pion_bhabhang_rest",";E [GeV];",350,0,350);
-  bhabhang.outputs.hE_pion_ol             = new TH1F("hE_pion_bhabhang_ol",";E [GeV];",350,0,350);
-  bhabhang.outputs.hEvis_pfo              = new TH1F("hEvis_pfo_bhabhang",";E [GeV];",750,0,750);
-  bhabhang.outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_bhabhang",";E [GeV];",750,0,750);
-  bhabhang.outputs.hNBcalClusters         = new TH1F("hNBcalClusters_bhabhang",";# of BCal clusters;",6,0,6);
-  bhabhang.outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_bhabhang",";# of BCal clusters;",6,0,6);
-  bhabhang.outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_bhabhang",";# of BCal clusters;",6,0,6);
+  Event* EbhabhangLL = new Event;
+  EbhabhangLL->setProcessType(bhabhangLL);
+  EbhabhangLL->outputs.hCutStats              = new TH1F("hCutStats_bhabhangLL",";;",5,0,5);
+  EbhabhangLL->outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhangLL_isr"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhangLL_ol"    ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhangLL_other" ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhangLL_isr"  ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhangLL_ol"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhangLL_other",";Pt [GeV/c];",270,0,270);
+  EbhabhangLL->outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhangLL_electron",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_V0_rest             = new TH1F("hE_V0_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_V0_ol               = new TH1F("hE_V0_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_neutron_rest        = new TH1F("hE_neutron_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_neutron_ol          = new TH1F("hE_neutron_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_electron_rest       = new TH1F("hE_electron_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_electron_ol         = new TH1F("hE_electron_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_muon_rest           = new TH1F("hE_muon_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_muon_ol             = new TH1F("hE_muon_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_pion_rest           = new TH1F("hE_pion_bhabhangLL_rest",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hE_pion_ol             = new TH1F("hE_pion_bhabhangLL_ol",";E [GeV];",350,0,350);
+  EbhabhangLL->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_bhabhangLL",";E [GeV];",750,0,750);
+  EbhabhangLL->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_bhabhangLL",";E [GeV];",750,0,750);
+  EbhabhangLL->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_bhabhangLL",";# of BCal clusters;",6,0,6);
+  EbhabhangLL->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_bhabhangLL",";# of BCal clusters;",6,0,6);
+  EbhabhangLL->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_bhabhangLL",";# of BCal clusters;",6,0,6);
+  EbhabhangLL->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_bhabhangLL",";Pt [GeV];",100,0,20);
+  EbhabhangLL->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_bhabhangLL",";Pt [GeV];",100,0,20);
+  EbhabhangLL->outputs.hPt_bcal               = new TH1F("hPt_bcal_bhabhangLL",";Pt [GeV];",100,0,20);
+  EbhabhangLL->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangLL",";E [GeV];",350,0,350);
 
-  int nmaxfiles_bhabhang = 100;
-  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
-      // bhabhang LL
-      stringstream fname;
-      fname << "bhabhang/root/l5_500GeV.bhabhang.eL.pL_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      bhabhang.process(fname.str().data());
-  }
-  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
-      // bhabhang LR
-      stringstream fname;
-      fname << "bhabhang/root/l5_500GeV.bhabhang.eL.pR_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      bhabhang.process(fname.str().data());
-  }
-  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
-      // bhabhang RL
-      stringstream fname;
-      fname << "bhabhang/root/l5_500GeV.bhabhang.eR.pL_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      bhabhang.process(fname.str().data());
-  }
-  for (int i = 1; i <= nmaxfiles_bhabhang; i++) {
-      // bhabhang RR
-      stringstream fname;
-      fname << "bhabhang/root/l5_500GeV.bhabhang.eR.pR_" << i << ".root" << ends;
-      if (gSystem->AccessPathName(fname.str().data())) break;
-      cerr << "Loading " << fname.str().data() << " ... " << endl;
-      bhabhang.process(fname.str().data());
-  }
+  SetInputFiles(EbhabhangLL); // see input.C
+  EbhabhangLL->process();
+  // do something after event loop.
+  EbhabhangLL->processAfterEventLoop();
 
-  bhabhang.processAfterEventLoop();
+  Event* EbhabhangLR = new Event;
+  EbhabhangLR->setProcessType(bhabhangLR);
+  EbhabhangLR->outputs.hCutStats              = new TH1F("hCutStats_bhabhangLR",";;",5,0,5);
+  EbhabhangLR->outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhangLR_isr"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLR->outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhangLR_ol"    ,";Pt [GeV/c];",270,0,270); 
+  EbhabhangLR->outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhangLR_other" ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLR->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhangLR_isr"  ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLR->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhangLR_ol"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangLR->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhangLR_other",";Pt [GeV/c];",270,0,270);
+  EbhabhangLR->outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhangLR_electron",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_V0_rest             = new TH1F("hE_V0_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_V0_ol               = new TH1F("hE_V0_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_neutron_rest        = new TH1F("hE_neutron_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_neutron_ol          = new TH1F("hE_neutron_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_electron_rest       = new TH1F("hE_electron_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_electron_ol         = new TH1F("hE_electron_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_muon_rest           = new TH1F("hE_muon_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_muon_ol             = new TH1F("hE_muon_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_pion_rest           = new TH1F("hE_pion_bhabhangLR_rest",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hE_pion_ol             = new TH1F("hE_pion_bhabhangLR_ol",";E [GeV];",350,0,350);
+  EbhabhangLR->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_bhabhangLR",";E [GeV];",750,0,750);
+  EbhabhangLR->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_bhabhangLR",";E [GeV];",750,0,750);
+  EbhabhangLR->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_bhabhangLR",";# of BCal clusters;",6,0,6);
+  EbhabhangLR->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_bhabhangLR",";# of BCal clusters;",6,0,6);
+  EbhabhangLR->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_bhabhangLR",";# of BCal clusters;",6,0,6);
+  EbhabhangLR->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_bhabhangLR",";Pt [GeV];",100,0,20);
+  EbhabhangLR->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_bhabhangLR",";Pt [GeV];",100,0,20);
+  EbhabhangLR->outputs.hPt_bcal               = new TH1F("hPt_bcal_bhabhangLR",";Pt [GeV];",100,0,20);
+  EbhabhangLR->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangLR",";E [GeV];",350,0,350);
+  SetInputFiles(EbhabhangLR); // see input.C
+  EbhabhangLR->process();
+  // do something after event loop.
+  EbhabhangLR->processAfterEventLoop();
+
+  Event* EbhabhangRL = new Event;
+  EbhabhangRL->setProcessType(bhabhangRL);
+  EbhabhangRL->outputs.hCutStats              = new TH1F("hCutStats_bhabhangRL",";;",5,0,5);
+  EbhabhangRL->outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhangRL_isr"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhangRL_ol"    ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhangRL_other" ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhangRL_isr"  ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhangRL_ol"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhangRL_other",";Pt [GeV/c];",270,0,270);
+  EbhabhangRL->outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhangRL_electron",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_V0_rest             = new TH1F("hE_V0_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_V0_ol               = new TH1F("hE_V0_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_neutron_rest        = new TH1F("hE_neutron_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_neutron_ol          = new TH1F("hE_neutron_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_electron_rest       = new TH1F("hE_electron_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_electron_ol         = new TH1F("hE_electron_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_muon_rest           = new TH1F("hE_muon_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_muon_ol             = new TH1F("hE_muon_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_pion_rest           = new TH1F("hE_pion_bhabhangRL_rest",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hE_pion_ol             = new TH1F("hE_pion_bhabhangRL_ol",";E [GeV];",350,0,350);
+  EbhabhangRL->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_bhabhangRL",";E [GeV];",750,0,750);
+  EbhabhangRL->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_bhabhangRL",";E [GeV];",750,0,750);
+  EbhabhangRL->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_bhabhangRL",";# of BCal clusters;",6,0,6);
+  EbhabhangRL->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_bhabhangRL",";# of BCal clusters;",6,0,6);
+  EbhabhangRL->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_bhabhangRL",";# of BCal clusters;",6,0,6);
+  EbhabhangRL->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_bhabhangRL",";Pt [GeV];",100,0,20);
+  EbhabhangRL->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_bhabhangRL",";Pt [GeV];",100,0,20);
+  EbhabhangRL->outputs.hPt_bcal               = new TH1F("hPt_bcal_bhabhangRL",";Pt [GeV];",100,0,20);
+  EbhabhangRL->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangRL",";E [GeV];",350,0,350);
+  SetInputFiles(EbhabhangRL); // see input.C
+  EbhabhangRL->process();
+  EbhabhangRL->processAfterEventLoop();
+
+  Event* EbhabhangRR = new Event;
+  EbhabhangRR->setProcessType(bhabhangRR);
+  EbhabhangRR->outputs.hCutStats              = new TH1F("hCutStats_bhabhangRR",";;",5,0,5);
+  EbhabhangRR->outputs.hPt_ep_isr             = new TH1F("hPt_ep_bhabhangRR_isr"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hPt_ep_ol              = new TH1F("hPt_ep_bhabhangRR_ol"    ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hPt_ep_other           = new TH1F("hPt_ep_bhabhangRR_other" ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hPt_pfo_isr            = new TH1F("hPt_pfo_bhabhangRR_isr"  ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hPt_pfo_ol             = new TH1F("hPt_pfo_bhabhangRR_ol"   ,";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hPt_pfo_other          = new TH1F("hPt_pfo_bhabhangRR_other",";Pt [GeV/c];",270,0,270);
+  EbhabhangRR->outputs.hE_photon_rest         = new TH1F("hE_photon_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_photon_ol           = new TH1F("hE_photon_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_photon_electron     = new TH1F("hE_photon_bhabhangRR_electron",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_V0_rest             = new TH1F("hE_V0_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_V0_ol               = new TH1F("hE_V0_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_neutron_rest        = new TH1F("hE_neutron_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_neutron_ol          = new TH1F("hE_neutron_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_electron_rest       = new TH1F("hE_electron_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_electron_ol         = new TH1F("hE_electron_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_muon_rest           = new TH1F("hE_muon_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_muon_ol             = new TH1F("hE_muon_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_pion_rest           = new TH1F("hE_pion_bhabhangRR_rest",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hE_pion_ol             = new TH1F("hE_pion_bhabhangRR_ol",";E [GeV];",350,0,350);
+  EbhabhangRR->outputs.hEvis_pfo              = new TH1F("hEvis_pfo_bhabhangRR",";E [GeV];",750,0,750);
+  EbhabhangRR->outputs.hEvis_pfo_wo_pi_n      = new TH1F("hEvis_pfo_wo_pi_n_bhabhangRR",";E [GeV];",750,0,750);
+  EbhabhangRR->outputs.hNBcalClusters         = new TH1F("hNBcalClusters_bhabhangRR",";# of BCal clusters;",6,0,6);
+  EbhabhangRR->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_bhabhangRR",";# of BCal clusters;",6,0,6);
+  EbhabhangRR->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_bhabhangRR",";# of BCal clusters;",6,0,6);
+  EbhabhangRR->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_bhabhangRR",";Pt [GeV];",100,0,20);
+  EbhabhangRR->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_bhabhangRR",";Pt [GeV];",100,0,20);
+  EbhabhangRR->outputs.hPt_bcal               = new TH1F("hPt_bcal_bhabhangRR",";Pt [GeV];",100,0,20);
+  EbhabhangRR->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangRR",";E [GeV];",350,0,350);
+  SetInputFiles(EbhabhangRR); // see input.C
+  EbhabhangRR->process();
+  // do something after event loop.
+  EbhabhangRR->processAfterEventLoop();
 
   stringstream foutname;
   foutname << "plots/plots.root" << ends;
   cerr << "Output plots have been written into " << foutname.str().data() << endl;
   TFile* output = new TFile(foutname.str().data(),"RECREATE");
-  nung.outputs.hPt_ep_other->Write();
-  nung.outputs.hPt_ep_ol->Write();
-  nung.outputs.hPt_ep_isr->Write();
-  bhabhang.outputs.hPt_ep_ol->Write();
-  bhabhang.outputs.hPt_ep_isr->Write();
-  bhabhang.outputs.hPt_ep_other->Write();
-  nung.outputs.hPt_pfo_other->Write();
-  nung.outputs.hPt_pfo_ol->Write();
-  nung.outputs.hPt_pfo_isr->Write();
-  bhabhang.outputs.hPt_pfo_ol->Write();
-  bhabhang.outputs.hPt_pfo_isr->Write();
-  bhabhang.outputs.hPt_pfo_other->Write();
-  nung.outputs.hE_photon_ol->Write();
-  nung.outputs.hE_photon_rest->Write();
-  bhabhang.outputs.hE_photon_ol->Write();
-  bhabhang.outputs.hE_photon_electron->Write();
-  bhabhang.outputs.hE_photon_rest->Write();
-  nung.outputs.hE_V0_ol->Write();
-  nung.outputs.hE_V0_rest->Write();
-  bhabhang.outputs.hE_V0_ol->Write();
-  bhabhang.outputs.hE_V0_rest->Write();
-  nung.outputs.hE_neutron_ol->Write();
-  nung.outputs.hE_neutron_rest->Write();
-  bhabhang.outputs.hE_neutron_ol->Write();
-  bhabhang.outputs.hE_neutron_rest->Write();
-  nung.outputs.hE_electron_ol->Write();
-  nung.outputs.hE_electron_rest->Write();
-  bhabhang.outputs.hE_electron_ol->Write();
-  bhabhang.outputs.hE_electron_rest->Write();
-  nung.outputs.hE_muon_ol->Write();
-  nung.outputs.hE_muon_rest->Write();
-  bhabhang.outputs.hE_muon_ol->Write();
-  bhabhang.outputs.hE_muon_rest->Write();
-  nung.outputs.hE_pion_ol->Write();
-  nung.outputs.hE_pion_rest->Write();
-  bhabhang.outputs.hE_pion_ol->Write();
-  bhabhang.outputs.hE_pion_rest->Write();
-  nung.outputs.hEvis_pfo->Write();
-  bhabhang.outputs.hEvis_pfo->Write();
-  nung.outputs.hEvis_pfo_wo_pi_n->Write();
-  bhabhang.outputs.hEvis_pfo_wo_pi_n->Write();
-  nung.outputs.hNBcalClusters1ISR->Write();
-  nung.outputs.hNBcalClustersMultiISR->Write();
-  bhabhang.outputs.hNBcalClusters->Write();
-  nung.outputs.hE_photon->Write();
-  nung.outputs.hNrecNgen_photon->Write();
-  nung.outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nung");
-  nung.outputs.gNrecNgenEmc_photon->Write();
-  nung.outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nung");
-  nung.outputs.gNrecNgenCostheta_photon->Write();
+  EnungLR->outputs.hCutStats->Write();
+  EnungLR->outputs.hPt_ep_other->Write();
+  EnungLR->outputs.hPt_ep_ol->Write();
+  EnungLR->outputs.hPt_ep_isr->Write();
+  EnungLR->outputs.hPt_pfo_other->Write();
+  EnungLR->outputs.hPt_pfo_ol->Write();
+  EnungLR->outputs.hPt_pfo_isr->Write();
+  EnungLR->outputs.hE_photon_ol->Write();
+  EnungLR->outputs.hE_photon_rest->Write();
+  EnungLR->outputs.hE_V0_ol->Write();
+  EnungLR->outputs.hE_V0_rest->Write();
+  EnungLR->outputs.hE_neutron_ol->Write();
+  EnungLR->outputs.hE_neutron_rest->Write();
+  EnungLR->outputs.hE_electron_ol->Write();
+  EnungLR->outputs.hE_electron_rest->Write();
+  EnungLR->outputs.hE_muon_ol->Write();
+  EnungLR->outputs.hE_muon_rest->Write();
+  EnungLR->outputs.hE_pion_ol->Write();
+  EnungLR->outputs.hE_pion_rest->Write();
+  EnungLR->outputs.hEvis_pfo->Write();
+  EnungLR->outputs.hEvis_pfo_wo_pi_n->Write();
+  EnungLR->outputs.hNBcalClusters1ISR->Write();
+  EnungLR->outputs.hNBcalClustersMultiISR->Write();
+  EnungLR->outputs.hE_photon->Write();
+  EnungLR->outputs.hNrecNgen_photon->Write();
+  EnungLR->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungLR");
+  EnungLR->outputs.gNrecNgenEmc_photon->Write();
+  EnungLR->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungLR");
+  EnungLR->outputs.gNrecNgenCostheta_photon->Write();
+  EnungLR->outputs.hPt_bcal_bcalcoord->Write();
+  EnungLR->outputs.hPtMax_bcal_bcalcoord->Write();
+  EnungLR->outputs.hPt_bcal->Write();
+  EnungLR->outputs.hE_bcal->Write();
+
+  EnungRL->outputs.hCutStats->Write();
+  EnungRL->outputs.hPt_ep_other->Write();
+  EnungRL->outputs.hPt_ep_ol->Write();
+  EnungRL->outputs.hPt_ep_isr->Write();
+  EnungRL->outputs.hPt_pfo_other->Write();
+  EnungRL->outputs.hPt_pfo_ol->Write();
+  EnungRL->outputs.hPt_pfo_isr->Write();
+  EnungRL->outputs.hE_photon_ol->Write();
+  EnungRL->outputs.hE_photon_rest->Write();
+  EnungRL->outputs.hE_V0_ol->Write();
+  EnungRL->outputs.hE_V0_rest->Write();
+  EnungRL->outputs.hE_neutron_ol->Write();
+  EnungRL->outputs.hE_neutron_rest->Write();
+  EnungRL->outputs.hE_electron_ol->Write();
+  EnungRL->outputs.hE_electron_rest->Write();
+  EnungRL->outputs.hE_muon_ol->Write();
+  EnungRL->outputs.hE_muon_rest->Write();
+  EnungRL->outputs.hE_pion_ol->Write();
+  EnungRL->outputs.hE_pion_rest->Write();
+  EnungRL->outputs.hEvis_pfo->Write();
+  EnungRL->outputs.hEvis_pfo_wo_pi_n->Write();
+  EnungRL->outputs.hNBcalClusters1ISR->Write();
+  EnungRL->outputs.hNBcalClustersMultiISR->Write();
+  EnungRL->outputs.hE_photon->Write();
+  EnungRL->outputs.hNrecNgen_photon->Write();
+  EnungRL->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungRL");
+  EnungRL->outputs.gNrecNgenEmc_photon->Write();
+  EnungRL->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungRL");
+  EnungRL->outputs.gNrecNgenCostheta_photon->Write();
+  EnungRL->outputs.hPt_bcal_bcalcoord->Write();
+  EnungRL->outputs.hPtMax_bcal_bcalcoord->Write();
+  EnungRL->outputs.hPt_bcal->Write();
+  EnungRL->outputs.hE_bcal->Write();
+
+  EbhabhangLL->outputs.hCutStats->Write();
+  EbhabhangLL->outputs.hPt_ep_ol->Write();
+  EbhabhangLL->outputs.hPt_ep_isr->Write();
+  EbhabhangLL->outputs.hPt_ep_other->Write();
+  EbhabhangLL->outputs.hPt_pfo_ol->Write();
+  EbhabhangLL->outputs.hPt_pfo_isr->Write();
+  EbhabhangLL->outputs.hPt_pfo_other->Write();
+  EbhabhangLL->outputs.hE_photon_ol->Write();
+  EbhabhangLL->outputs.hE_photon_electron->Write();
+  EbhabhangLL->outputs.hE_photon_rest->Write();
+  EbhabhangLL->outputs.hE_V0_ol->Write();
+  EbhabhangLL->outputs.hE_V0_rest->Write();
+  EbhabhangLL->outputs.hE_neutron_ol->Write();
+  EbhabhangLL->outputs.hE_neutron_rest->Write();
+  EbhabhangLL->outputs.hE_electron_ol->Write();
+  EbhabhangLL->outputs.hE_electron_rest->Write();
+  EbhabhangLL->outputs.hE_muon_ol->Write();
+  EbhabhangLL->outputs.hE_muon_rest->Write();
+  EbhabhangLL->outputs.hE_pion_ol->Write();
+  EbhabhangLL->outputs.hE_pion_rest->Write();
+  EbhabhangLL->outputs.hEvis_pfo->Write();
+  EbhabhangLL->outputs.hEvis_pfo_wo_pi_n->Write();
+  EbhabhangLL->outputs.hNBcalClusters->Write();
+  EbhabhangLL->outputs.hPt_bcal_bcalcoord->Write();
+  EbhabhangLL->outputs.hPtMax_bcal_bcalcoord->Write();
+  EbhabhangLL->outputs.hPt_bcal->Write();
+  EbhabhangLL->outputs.hE_bcal->Write();
+
+  EbhabhangLR->outputs.hCutStats->Write();
+  EbhabhangLR->outputs.hPt_ep_ol->Write();
+  EbhabhangLR->outputs.hPt_ep_isr->Write();
+  EbhabhangLR->outputs.hPt_ep_other->Write();
+  EbhabhangLR->outputs.hPt_pfo_ol->Write();
+  EbhabhangLR->outputs.hPt_pfo_isr->Write();
+  EbhabhangLR->outputs.hPt_pfo_other->Write();
+  EbhabhangLR->outputs.hE_photon_ol->Write();
+  EbhabhangLR->outputs.hE_photon_electron->Write();
+  EbhabhangLR->outputs.hE_photon_rest->Write();
+  EbhabhangLR->outputs.hE_V0_ol->Write();
+  EbhabhangLR->outputs.hE_V0_rest->Write();
+  EbhabhangLR->outputs.hE_neutron_ol->Write();
+  EbhabhangLR->outputs.hE_neutron_rest->Write();
+  EbhabhangLR->outputs.hE_electron_ol->Write();
+  EbhabhangLR->outputs.hE_electron_rest->Write();
+  EbhabhangLR->outputs.hE_muon_ol->Write();
+  EbhabhangLR->outputs.hE_muon_rest->Write();
+  EbhabhangLR->outputs.hE_pion_ol->Write();
+  EbhabhangLR->outputs.hE_pion_rest->Write();
+  EbhabhangLR->outputs.hEvis_pfo->Write();
+  EbhabhangLR->outputs.hEvis_pfo_wo_pi_n->Write();
+  EbhabhangLR->outputs.hNBcalClusters->Write();
+  EbhabhangLR->outputs.hPt_bcal_bcalcoord->Write();
+  EbhabhangLR->outputs.hPtMax_bcal_bcalcoord->Write();
+  EbhabhangLR->outputs.hPt_bcal->Write();
+  EbhabhangLR->outputs.hE_bcal->Write();
+
+  EbhabhangRL->outputs.hCutStats->Write();
+  EbhabhangRL->outputs.hPt_ep_ol->Write();
+  EbhabhangRL->outputs.hPt_ep_isr->Write();
+  EbhabhangRL->outputs.hPt_ep_other->Write();
+  EbhabhangRL->outputs.hPt_pfo_ol->Write();
+  EbhabhangRL->outputs.hPt_pfo_isr->Write();
+  EbhabhangRL->outputs.hPt_pfo_other->Write();
+  EbhabhangRL->outputs.hE_photon_ol->Write();
+  EbhabhangRL->outputs.hE_photon_electron->Write();
+  EbhabhangRL->outputs.hE_photon_rest->Write();
+  EbhabhangRL->outputs.hE_V0_ol->Write();
+  EbhabhangRL->outputs.hE_V0_rest->Write();
+  EbhabhangRL->outputs.hE_neutron_ol->Write();
+  EbhabhangRL->outputs.hE_neutron_rest->Write();
+  EbhabhangRL->outputs.hE_electron_ol->Write();
+  EbhabhangRL->outputs.hE_electron_rest->Write();
+  EbhabhangRL->outputs.hE_muon_ol->Write();
+  EbhabhangRL->outputs.hE_muon_rest->Write();
+  EbhabhangRL->outputs.hE_pion_ol->Write();
+  EbhabhangRL->outputs.hE_pion_rest->Write();
+  EbhabhangRL->outputs.hEvis_pfo->Write();
+  EbhabhangRL->outputs.hEvis_pfo_wo_pi_n->Write();
+  EbhabhangRL->outputs.hNBcalClusters->Write();
+  EbhabhangRL->outputs.hPt_bcal_bcalcoord->Write();
+  EbhabhangRL->outputs.hPtMax_bcal_bcalcoord->Write();
+  EbhabhangRL->outputs.hPt_bcal->Write();
+  EbhabhangRL->outputs.hE_bcal->Write();
+
+  EbhabhangRR->outputs.hCutStats->Write();
+  EbhabhangRR->outputs.hPt_ep_ol->Write();
+  EbhabhangRR->outputs.hPt_ep_isr->Write();
+  EbhabhangRR->outputs.hPt_ep_other->Write();
+  EbhabhangRR->outputs.hPt_pfo_ol->Write();
+  EbhabhangRR->outputs.hPt_pfo_isr->Write();
+  EbhabhangRR->outputs.hPt_pfo_other->Write();
+  EbhabhangRR->outputs.hE_photon_ol->Write();
+  EbhabhangRR->outputs.hE_photon_electron->Write();
+  EbhabhangRR->outputs.hE_photon_rest->Write();
+  EbhabhangRR->outputs.hE_V0_ol->Write();
+  EbhabhangRR->outputs.hE_V0_rest->Write();
+  EbhabhangRR->outputs.hE_neutron_ol->Write();
+  EbhabhangRR->outputs.hE_neutron_rest->Write();
+  EbhabhangRR->outputs.hE_electron_ol->Write();
+  EbhabhangRR->outputs.hE_electron_rest->Write();
+  EbhabhangRR->outputs.hE_muon_ol->Write();
+  EbhabhangRR->outputs.hE_muon_rest->Write();
+  EbhabhangRR->outputs.hE_pion_ol->Write();
+  EbhabhangRR->outputs.hE_pion_rest->Write();
+  EbhabhangRR->outputs.hEvis_pfo->Write();
+  EbhabhangRR->outputs.hEvis_pfo_wo_pi_n->Write();
+  EbhabhangRR->outputs.hNBcalClusters->Write();
+  EbhabhangRR->outputs.hPt_bcal_bcalcoord->Write();
+  EbhabhangRR->outputs.hPtMax_bcal_bcalcoord->Write();
+  EbhabhangRR->outputs.hPt_bcal->Write();
+  EbhabhangRR->outputs.hE_bcal->Write();
 }
 

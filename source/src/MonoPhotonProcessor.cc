@@ -476,6 +476,11 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
              _data.bcal_phi[i]   = xp.Phi(); 
              //_data.bcal_theta[i] = (xp.Z()>0)?TMath::ATan(xp.Perp()/xp.Z()):TMath::ATan(xp.Perp()/xp.Z())+TMath::Pi(); 
              _data.bcal_theta[i] = TMath::ACos(xp.Z()/xp.Mag()); 
+
+             TVector3 pv = _data.bcal_e[i] * xp.Unit(); // asuming M = 0, pvtx=(0,0,0).
+             float px_bcalcoord = _bg*pv.Mag() + _g * pv.X(); 
+             _data.bcal_px_bcalcoord[i] = px_bcalcoord; 
+             _data.bcal_pt_bcalcoord[i] = TMath::Sqrt(px_bcalcoord*px_bcalcoord+pv.Y()*pv.Y()); 
 #endif
         }
     }
@@ -649,6 +654,8 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "bcal_z"           , &d.bcal_z           , "bcal_z[nbcalclrs]"       );
   _evtdata->Branch( "bcal_phi"         , &d.bcal_phi         , "bcal_phi[nbcalclrs]"     );
   _evtdata->Branch( "bcal_theta"       , &d.bcal_theta       , "bcal_theta[nbcalclrs]"   );
+  _evtdata->Branch( "bcal_px_bcalcoord", &d.bcal_px_bcalcoord, "bcal_px_bcalcoord[nbcalclrs]");
+  _evtdata->Branch( "bcal_pt_bcalcoord", &d.bcal_pt_bcalcoord, "bcal_pt_bcalcoord[nbcalclrs]");
   return;
 
 }

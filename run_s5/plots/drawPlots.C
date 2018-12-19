@@ -33,6 +33,8 @@ void drawPlots() {
   TH1F* hNBcalClusters_nung           = static_cast<TH1F*>(fin->Get("hNBcalClusters_nung"));
   TH1F* hNBcalClusters1ISR_nung       = static_cast<TH1F*>(fin->Get("hNBcalClusters1ISR_nung"));
   TH1F* hNBcalClustersMultiISR_nung   = static_cast<TH1F*>(fin->Get("hNBcalClustersMultiISR_nung"));
+  TH1F* hPt_bcal_bcalcoord_nung       = static_cast<TH1F*>(fin->Get("hPt_bcal_bcalcoord_nung"));
+  TH1F* hPtMax_bcal_bcalcoord_nung    = static_cast<TH1F*>(fin->Get("hPtMax_bcal_bcalcoord_nung"));
 
   TH1F* hPt_ep_bhabhang_isr             = static_cast<TH1F*>(fin->Get("hPt_ep_bhabhang_isr"));
   TH1F* hPt_ep_bhabhang_ol              = static_cast<TH1F*>(fin->Get("hPt_ep_bhabhang_ol"));
@@ -58,6 +60,8 @@ void drawPlots() {
   TH1F* hNBcalClusters_bhabhang         = static_cast<TH1F*>(fin->Get("hNBcalClusters_bhabhang"));
   TH1F* hNBcalClusters1ISR_bhabhang     = static_cast<TH1F*>(fin->Get("hNBcalClusters1ISR_bhabhang"));
   TH1F* hNBcalClustersMultiISR_bhabhang = static_cast<TH1F*>(fin->Get("hNBcalClustersMultiISR_bhabhang"));
+  TH1F* hPt_bcal_bcalcoord_bhabhang     = static_cast<TH1F*>(fin->Get("hPt_bcal_bcalcoord_bhabhang"));
+  TH1F* hPtMax_bcal_bcalcoord_bhabhang  = static_cast<TH1F*>(fin->Get("hPtMax_bcal_bcalcoord_bhabhang"));
 
 
 
@@ -84,6 +88,8 @@ void drawPlots() {
   hEvis_pfo_wo_pi_n_nung->SetFillColor(kGreen+3);
   hNBcalClusters1ISR_nung->SetFillColor(kYellow+1);
   hNBcalClustersMultiISR_nung->SetFillColor(kGreen+3);
+  hPt_bcal_bcalcoord_nung->SetFillColor(kGreen+3); 
+  hPtMax_bcal_bcalcoord_nung->SetFillColor(kGreen+3); 
 
   hPt_ep_bhabhang_isr->SetFillColor(kOrange+4);
   hPt_ep_bhabhang_ol->SetFillColor(kMagenta+1);
@@ -107,7 +113,8 @@ void drawPlots() {
   hEvis_pfo_bhabhang->SetFillColor(kOrange+6);
   hEvis_pfo_wo_pi_n_bhabhang->SetFillColor(kOrange+6);
   hNBcalClusters_bhabhang->SetFillColor(kOrange+6);
-
+  hPt_bcal_bcalcoord_bhabhang->SetFillColor(kOrange+6); 
+  hPtMax_bcal_bcalcoord_bhabhang->SetFillColor(kOrange+6); 
 
 
   TCanvas* c1 = new TCanvas("c1","",600,400);
@@ -452,4 +459,62 @@ void drawPlots() {
   gNrecNgenCostheta_photon_nung->Draw("ap");
   gNrecNgenCostheta_photon_nung->GetXaxis()->SetRangeUser(0.,1.);
   gNrecNgenCostheta_photon_nung->GetYaxis()->SetRangeUser(0.99,1.15);
+
+  TCanvas* c16 = new TCanvas("c16","",600,400);
+  THStack* hPt_bcal_bcalcoord_all = new THStack("hPt_bcal_bcalcoord_all",";Pt [GeV];");
+  //hPt_bcal_bcalcoord_all->SetMaximum(1e10);
+  hPt_bcal_bcalcoord_all->SetMinimum(0);
+  hPt_bcal_bcalcoord_all->Add(hPt_bcal_bcalcoord_nung);
+  hPt_bcal_bcalcoord_all->Add(hPt_bcal_bcalcoord_bhabhang);
+  hPt_bcal_bcalcoord_all->Draw(); 
+  TLegend* leg_c16_head = new TLegend(0.5,0.85,0.9,0.9);
+  leg_c16_head->SetTextSize(0.05);
+  leg_c16_head->SetTextFont(42);
+  leg_c16_head->SetHeader("Pt of BCalClusters in BCal coordinate");
+  leg_c16_head->SetFillStyle(0);
+  leg_c16_head->Draw();
+  TLegend* leg_c16 = new TLegend(0.65,0.55,0.9,0.85);
+  leg_c16->SetTextSize(0.04);
+  leg_c16->SetTextFont(42);
+  leg_c16->AddEntry(hPt_bcal_bcalcoord_bhabhang, "e^{+}e^{-}+N#gamma" ,"f");
+  leg_c16->AddEntry(hPt_bcal_bcalcoord_nung,     "#nu#nu+N#gamma" ,"f");
+  leg_c16->Draw();
+
+  TCanvas* c17 = new TCanvas("c17","",600,400);
+  THStack* hPtMax_bcal_bcalcoord_all = new THStack("hPtMax_bcal_bcalcoord_all",";Pt [GeV];");
+  //hPtMax_bcal_bcalcoord_all->SetMaximum(1e10);
+  hPtMax_bcal_bcalcoord_all->SetMinimum(0);
+  hPtMax_bcal_bcalcoord_all->Add(hPtMax_bcal_bcalcoord_nung);
+  hPtMax_bcal_bcalcoord_all->Add(hPtMax_bcal_bcalcoord_bhabhang);
+  hPtMax_bcal_bcalcoord_all->Draw(); 
+  TLegend* leg_c17_head = new TLegend(0.5,0.85,0.9,0.9);
+  leg_c17_head->SetTextSize(0.05);
+  leg_c17_head->SetTextFont(42);
+  leg_c17_head->SetHeader("PtMax in BCalClusters in BCal coordinate");
+  leg_c17_head->SetFillStyle(0);
+  leg_c17_head->Draw();
+  TLegend* leg_c17 = new TLegend(0.65,0.55,0.9,0.85);
+  leg_c17->SetTextSize(0.04);
+  leg_c17->SetTextFont(42);
+  leg_c17->AddEntry(hPtMax_bcal_bcalcoord_bhabhang, "e^{+}e^{-}+N#gamma" ,"f");
+  leg_c17->AddEntry(hPtMax_bcal_bcalcoord_nung,     "#nu#nu+N#gamma" ,"f");
+  leg_c17->Draw();
+
+  c1->Print("c1.pdf");
+  c2->Print("c2.pdf");
+  c3->Print("c3.pdf");
+  c4->Print("c4.pdf");
+  c5->Print("c5.pdf");
+  c6->Print("c6.pdf");
+  c7->Print("c7.pdf");
+  c8->Print("c8.pdf");
+  c9->Print("c9.pdf");
+  c10->Print("c10.pdf");
+  c11->Print("c11.pdf");
+  c12->Print("c12.pdf");
+  c13->Print("c13.pdf");
+  c14->Print("c14.pdf");
+  c15->Print("c15.pdf");
+  c16->Print("c16.pdf");
+  c17->Print("c17.pdf");
 }

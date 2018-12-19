@@ -599,8 +599,17 @@ void run_load_and_select(){
      	
           
           if(rcori[n]==102){
+//FIXME
+#if 0
+if (rcene[n]>32) { 
      	    bcalhit=true;
      	    rcori102++;
+}
+#else
+     	    bcalhit=true;
+     	    rcori102++;
+#endif
+
           }  
         } // nrec loop
 
