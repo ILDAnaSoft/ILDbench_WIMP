@@ -1,8 +1,12 @@
+// The method in this file is supposed to be invoked by run.C
+//
 // Set input files (output of MonoPhotonProcessor) depending on processes.
 // Will stop reading when a file specified doesn't exist. 
 // Use a small number for testing.
+//
 const int NMAX_INPUTFILES = 1;
 
+// This method will be called from analysis.C.
 void SetInputFiles(Event* ev)
 {
   switch(ev->getProcessType()) {
@@ -83,3 +87,5 @@ void SetInputFiles(Event* ev)
        abort();
   }
 }
+
+

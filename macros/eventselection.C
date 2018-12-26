@@ -83,6 +83,7 @@ class Event
            _T->SetBranchAddress("bcal_phi",bcal_phi);
            _T->SetBranchAddress("bcal_theta",bcal_theta);
            _T->SetBranchAddress("bcal_x",bcal_x);
+           _T->SetBranchAddress("bcal_x_bcalcoord",bcal_x_bcalcoord);
            _T->SetBranchAddress("bcal_y",bcal_y);
            _T->SetBranchAddress("bcal_z",bcal_z);
            _T->SetBranchAddress("bcal_pt_bcalcoord",bcal_pt_bcalcoord);
@@ -188,15 +189,14 @@ class Event
 
         void process(string fname);
 
-        void processAfterEventLoop();
-
         void clearFileList() { inputfiles.clear(); };
 
         void addToFileList(string file) { inputfiles.push_back(file); };
 
         struct Outputs
         {
-          Outputs() : hCutStats(0),
+          Outputs() :  
+                      hCutStats(0),
                       hE_photon(0),
                       hNrecNgen_photon(0),
                       hNrecNgenEmc_photon(0),
@@ -228,6 +228,7 @@ class Event
                       hNBcalClusters1ISR(0),
                       hNBcalClustersMultiISR(0),
                       hPt_bcal_bcalcoord(0),
+                      hPt_R_bcal_bcalcoord(0),
                       hPtMax_bcal_bcalcoord(0),
                       hPt_bcal(0),
                       hE_bcal(0) {}
@@ -267,6 +268,7 @@ class Event
           TH1F* hNBcalClustersMultiISR;
 
           TH1F* hPt_bcal_bcalcoord;
+          TH2F* hPt_R_bcal_bcalcoord;
           TH1F* hPtMax_bcal_bcalcoord;
           TH1F* hPt_bcal;
           TH1F* hE_bcal;
@@ -306,6 +308,7 @@ class Event
         int nbcalclrs;
         float bcal_e[NMAX], bcal_phi[NMAX], bcal_theta[NMAX];
         float bcal_x[NMAX], bcal_y[NMAX], bcal_z[NMAX];
+        float bcal_x_bcalcoord[NMAX];
         float bcal_px_bcalcoord[NMAX], bcal_pt_bcalcoord[NMAX];
         int   emaxphoton_index, ptmaxphoton_index;
         float emaxphoton_e, ptmaxphoton_pt_bcalcoord, emaxphoton_pt_bcalcoord, ptmaxphoton_e;
@@ -334,7 +337,7 @@ void Event::process(string fname)
 
   if (outputs.hCutStats) {
     // These labels will not be saved in the output root file with ROOT6.08/06, 
-    // but this officially has been fixed (May 2017).
+    // but this has been officially fixed (May 2017).
     outputs.hCutStats->GetXaxis()->SetBinLabel(1,"No cut"); 
     outputs.hCutStats->GetXaxis()->SetBinLabel(2,"Sig. def."); 
     outputs.hCutStats->GetXaxis()->SetBinLabel(3,"Pt cut"); 
@@ -517,6 +520,7 @@ void Event::process(string fname)
         float ptmax = -1.;
         for (int ibcal = 0; ibcal < nbcalclrs; ibcal++) {
           if (outputs.hPt_bcal_bcalcoord) outputs.hPt_bcal_bcalcoord->Fill(bcal_pt_bcalcoord[ibcal]);
+          if (outputs.hPt_R_bcal_bcalcoord) outputs.hPt_R_bcal_bcalcoord->Fill(bcal_pt_bcalcoord[ibcal],TMath::Sqrt(bcal_x_bcalcoord[ibcal]*bcal_x_bcalcoord[ibcal]+bcal_y[ibcal]*bcal_y[ibcal]));
           TVector3 xv(bcal_x[ibcal],bcal_y[ibcal],bcal_z[ibcal]);
           TVector3 pv(bcal_e[ibcal]*xv.Unit());
           if (outputs.hPt_bcal)           outputs.hPt_bcal->Fill(pv.Pt());
@@ -531,61 +535,6 @@ void Event::process(string fname)
 
 
   } // event loop
-}
-
-void Event::processAfterEventLoop()
-{
-  if (outputs.hNrecNgenEmc_photon&&outputs.hNrecNgenCostheta_photon) { 
-    const int    xbins_e = outputs.hNrecNgenEmc_photon->GetNbinsX();
-    double x_min_e = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinLowEdge(1);
-    double x_max_e = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinUpEdge(xbins_e);
-    const int    ybins_e = outputs.hNrecNgenEmc_photon->GetNbinsY();
-    double y_min_e = outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinLowEdge(1);
-    double y_max_e = outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinUpEdge(ybins_e);
-    const int    xbins_cos = outputs.hNrecNgenCostheta_photon->GetNbinsX();
-    double x_min_cos = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinLowEdge(1);
-    double x_max_cos = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinUpEdge(xbins_cos);
-    const int    ybins_cos = outputs.hNrecNgenCostheta_photon->GetNbinsY();
-    double y_min_cos = outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinLowEdge(1);
-    double y_max_cos = outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinUpEdge(ybins_cos);
-
-    double x_e[xbins_e], xerr_e[xbins_e], y_e[xbins_e], yerr_e[xbins_e];
-    for (int ix = 1; ix <= xbins_e; ix++) {
-      x_e[ix] = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinCenter(ix);
-      xerr_e[ix] = outputs.hNrecNgenEmc_photon->GetXaxis()->GetBinWidth(ix)/TMath::Sqrt(12);
-      TH1F h_y_e("h_y_e","",ybins_e,y_min_e,y_max_e);
-      for (int iy = 1; iy <= ybins_e; iy++) {
-        for (int icontent = 0; icontent < outputs.hNrecNgenEmc_photon->GetBinContent(ix,iy); icontent++) {
-          h_y_e.Fill(outputs.hNrecNgenEmc_photon->GetYaxis()->GetBinCenter(iy)); 
-        }
-      }
-      y_e[ix] = h_y_e.GetMean();
-      yerr_e[ix] = h_y_e.GetRMS() / TMath::Sqrt(h_y_e.GetEntries());
-      //yerr_e[ix] = TMath::Sqrt(h_y_e.GetRMS()*h_y_e.GetRMS()-h_y_e.GetMean()*h_y_e.GetMean()) / TMath::Sqrt(h_y_e.GetEntries());
-    }
-    outputs.gNrecNgenEmc_photon = new TGraphErrors(xbins_e,x_e,y_e,xerr_e,yerr_e);
-    outputs.gNrecNgenEmc_photon->SetTitle(";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}");
-
-    double x_cos[xbins_cos], xerr_cos[xbins_cos], y_cos[xbins_cos], yerr_cos[xbins_cos];
-    for (int ix = 1; ix <= xbins_cos; ix++) {
-      x_cos[ix] = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinCenter(ix);
-      xerr_cos[ix] = outputs.hNrecNgenCostheta_photon->GetXaxis()->GetBinWidth(ix)/TMath::Sqrt(12);
-      TH1F h_y_cos("h_y_cos","",ybins_cos,y_min_cos,y_max_cos);
-      for (int iy = 1; iy <= ybins_cos; iy++) {
-        for (int icontent = 0; icontent < outputs.hNrecNgenCostheta_photon->GetBinContent(ix,iy); icontent++) {
-          h_y_cos.Fill(outputs.hNrecNgenCostheta_photon->GetYaxis()->GetBinCenter(iy)); 
-        }
-      }
-      y_cos[ix] = h_y_cos.GetMean();
-      yerr_cos[ix] = h_y_cos.GetRMS() / TMath::Sqrt(h_y_cos.GetEntries());
-      //yerr_cos[ix] = TMath::Sqrt(h_y_cos.GetRMS()*h_y_cos.GetRMS()-h_y_cos.GetMean()*h_y_cos.GetMean()) / TMath::Sqrt(h_y_cos.GetEntries());
-      //y_cos[ix] = fitfunc.GetParameter(1);
-      //yerr_cos[ix] = fitfunc.GetParameter(2)/TMath::Sqrt(h_y_cos.GetEntries());
-    }
-    outputs.gNrecNgenCostheta_photon = new TGraphErrors(xbins_cos,x_cos,y_cos,xerr_cos,yerr_cos);
-    outputs.gNrecNgenCostheta_photon->SetTitle(";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}");
-
-  }
 }
 
 #endif

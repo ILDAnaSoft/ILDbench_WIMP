@@ -9,8 +9,8 @@
 
 using namespace std;
 
-#include "eventselection.C"
-#include "input.C"
+//#include "eventselection.C"
+//#include "input.C"
 
 void signalhandler(int singal)
 {
@@ -59,14 +59,13 @@ void analysis()
   EnungLR->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_nungLR",";# of BCal clusters;",6,0,6);
   EnungLR->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_nungLR",";# of BCal clusters;",6,0,6);
   EnungLR->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_nungLR",";Pt [GeV];",100,0,20);
+  EnungLR->outputs.hPt_R_bcal_bcalcoord   = new TH2F("hPt_R_bcal_bcalcoord_nungLR",";Pt [GeV];R [mm]",100,0,20,100,0,150);
   EnungLR->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_nungLR",";Pt [GeV];",100,0,20);
   EnungLR->outputs.hPt_bcal               = new TH1F("hPt_bcal_nungLR",";Pt [GeV];",100,0,20);
   EnungLR->outputs.hE_bcal                = new TH1F("hE_bcal_nungLR",";E [GeV];",350,0,350);
  
   SetInputFiles(EnungLR); // see input.C
   EnungLR->process();
-  // do something after event loop.
-  EnungLR->processAfterEventLoop();
 
 
   Event* EnungRL = new Event;
@@ -101,14 +100,13 @@ void analysis()
   EnungRL->outputs.hNBcalClusters1ISR     = new TH1F("hNBcalClusters1ISR_nungRL",";# of BCal clusters;",6,0,6);
   EnungRL->outputs.hNBcalClustersMultiISR = new TH1F("hNBcalClustersMultiISR_nungRL",";# of BCal clusters;",6,0,6);
   EnungRL->outputs.hPt_bcal_bcalcoord     = new TH1F("hPt_bcal_bcalcoord_nungRL",";Pt [GeV];",100,0,20);
+  EnungRL->outputs.hPt_R_bcal_bcalcoord   = new TH2F("hPt_R_bcal_bcalcoord_nungRL",";Pt [GeV];R [mm]",100,0,20,100,0,150);
   EnungRL->outputs.hPtMax_bcal_bcalcoord  = new TH1F("hPtMax_bcal_bcalcoord_nungRL",";Pt [GeV];",100,0,20);
   EnungRL->outputs.hPt_bcal               = new TH1F("hPt_bcal_nungRL",";Pt [GeV];",100,0,20);
   EnungRL->outputs.hE_bcal                = new TH1F("hE_bcal_nungRL",";E [GeV];",350,0,350);
 
   SetInputFiles(EnungRL); // see input.C
   EnungRL->process();
-  // do something after event loop.
-  EnungRL->processAfterEventLoop();
 
   // bhabha
   Event* EbhabhangLL = new Event;
@@ -145,8 +143,6 @@ void analysis()
 
   SetInputFiles(EbhabhangLL); // see input.C
   EbhabhangLL->process();
-  // do something after event loop.
-  EbhabhangLL->processAfterEventLoop();
 
   Event* EbhabhangLR = new Event;
   EbhabhangLR->setProcessType(bhabhangLR);
@@ -181,8 +177,6 @@ void analysis()
   EbhabhangLR->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangLR",";E [GeV];",350,0,350);
   SetInputFiles(EbhabhangLR); // see input.C
   EbhabhangLR->process();
-  // do something after event loop.
-  EbhabhangLR->processAfterEventLoop();
 
   Event* EbhabhangRL = new Event;
   EbhabhangRL->setProcessType(bhabhangRL);
@@ -217,7 +211,6 @@ void analysis()
   EbhabhangRL->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangRL",";E [GeV];",350,0,350);
   SetInputFiles(EbhabhangRL); // see input.C
   EbhabhangRL->process();
-  EbhabhangRL->processAfterEventLoop();
 
   Event* EbhabhangRR = new Event;
   EbhabhangRR->setProcessType(bhabhangRR);
@@ -252,8 +245,6 @@ void analysis()
   EbhabhangRR->outputs.hE_bcal                = new TH1F("hE_bcal_bhabhangRR",";E [GeV];",350,0,350);
   SetInputFiles(EbhabhangRR); // see input.C
   EbhabhangRR->process();
-  // do something after event loop.
-  EbhabhangRR->processAfterEventLoop();
 
   stringstream foutname;
   foutname << "plots/plots.root" << ends;
@@ -280,15 +271,19 @@ void analysis()
   EnungLR->outputs.hE_pion_rest->Write();
   EnungLR->outputs.hEvis_pfo->Write();
   EnungLR->outputs.hEvis_pfo_wo_pi_n->Write();
+  EnungLR->outputs.hNBcalClusters->Write();
   EnungLR->outputs.hNBcalClusters1ISR->Write();
   EnungLR->outputs.hNBcalClustersMultiISR->Write();
   EnungLR->outputs.hE_photon->Write();
   EnungLR->outputs.hNrecNgen_photon->Write();
-  EnungLR->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungLR");
-  EnungLR->outputs.gNrecNgenEmc_photon->Write();
-  EnungLR->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungLR");
-  EnungLR->outputs.gNrecNgenCostheta_photon->Write();
+  //EnungLR->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungLR");
+  //EnungLR->outputs.gNrecNgenEmc_photon->Write();
+  //EnungLR->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungLR");
+  //EnungLR->outputs.gNrecNgenCostheta_photon->Write();
+  EnungLR->outputs.hNrecNgenEmc_photon->Write();
+  EnungLR->outputs.hNrecNgenCostheta_photon->Write();
   EnungLR->outputs.hPt_bcal_bcalcoord->Write();
+  EnungLR->outputs.hPt_R_bcal_bcalcoord->Write();
   EnungLR->outputs.hPtMax_bcal_bcalcoord->Write();
   EnungLR->outputs.hPt_bcal->Write();
   EnungLR->outputs.hE_bcal->Write();
@@ -314,15 +309,19 @@ void analysis()
   EnungRL->outputs.hE_pion_rest->Write();
   EnungRL->outputs.hEvis_pfo->Write();
   EnungRL->outputs.hEvis_pfo_wo_pi_n->Write();
+  EnungRL->outputs.hNBcalClusters->Write();
   EnungRL->outputs.hNBcalClusters1ISR->Write();
   EnungRL->outputs.hNBcalClustersMultiISR->Write();
   EnungRL->outputs.hE_photon->Write();
   EnungRL->outputs.hNrecNgen_photon->Write();
-  EnungRL->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungRL");
-  EnungRL->outputs.gNrecNgenEmc_photon->Write();
-  EnungRL->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungRL");
-  EnungRL->outputs.gNrecNgenCostheta_photon->Write();
+  //EnungRL->outputs.gNrecNgenEmc_photon->SetName("gNrecNgenEmc_photon_nungRL");
+  //EnungRL->outputs.gNrecNgenEmc_photon->Write();
+  //EnungRL->outputs.gNrecNgenCostheta_photon->SetName("gNrecNgenCostheta_photon_nungRL");
+  //EnungRL->outputs.gNrecNgenCostheta_photon->Write();
+  EnungRL->outputs.hNrecNgenEmc_photon->Write();
+  EnungRL->outputs.hNrecNgenCostheta_photon->Write();
   EnungRL->outputs.hPt_bcal_bcalcoord->Write();
+  EnungRL->outputs.hPt_R_bcal_bcalcoord->Write();
   EnungRL->outputs.hPtMax_bcal_bcalcoord->Write();
   EnungRL->outputs.hPt_bcal->Write();
   EnungRL->outputs.hE_bcal->Write();

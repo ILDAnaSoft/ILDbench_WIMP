@@ -173,9 +173,11 @@ class MonoPhotonProcessor : public Processor {
     float  mcr_theta[NMAX_PFOS];
     float  mcr_chrg[NMAX_PFOS];
     float  mcr_startx[NMAX_PFOS];
+    float  mcr_startx_bcalcoord[NMAX_PFOS];
     float  mcr_starty[NMAX_PFOS];
     float  mcr_startz[NMAX_PFOS];
     float  mcr_endx[NMAX_PFOS];
+    float  mcr_endx_bcalcoord[NMAX_PFOS];
     float  mcr_endy[NMAX_PFOS];
     float  mcr_endz[NMAX_PFOS];
     int    mcr_pdg[NMAX_PFOS];
@@ -208,9 +210,11 @@ class MonoPhotonProcessor : public Processor {
     float  mcp_theta[NMAX_MCPS];
     float  mcp_chrg[NMAX_MCPS];
     float  mcp_startx[NMAX_MCPS];
+    float  mcp_startx_bcalcoord[NMAX_MCPS];
     float  mcp_starty[NMAX_MCPS];
     float  mcp_startz[NMAX_MCPS];
     float  mcp_endx[NMAX_MCPS];
+    float  mcp_endx_bcalcoord[NMAX_MCPS];
     float  mcp_endy[NMAX_MCPS];
     float  mcp_endz[NMAX_MCPS];
     int    mcp_pdg[NMAX_MCPS];
@@ -235,6 +239,7 @@ class MonoPhotonProcessor : public Processor {
     //int    nbcalhits[NMAX_CLRS];    // # of BCal cluster hits; Practically this is always 1.
     float  bcal_e[NMAX_CLRS];
     float  bcal_x[NMAX_CLRS];
+    float  bcal_x_bcalcoord[NMAX_CLRS];
     float  bcal_y[NMAX_CLRS];
     float  bcal_z[NMAX_CLRS];
     float  bcal_phi[NMAX_CLRS];

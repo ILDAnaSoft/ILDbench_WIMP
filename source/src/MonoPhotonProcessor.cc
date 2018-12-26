@@ -236,9 +236,13 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             _data.mcp_startx[i] = float(p->getVertex()[0]);
             _data.mcp_starty[i] = float(p->getVertex()[1]);
             _data.mcp_startz[i] = float(p->getVertex()[2]);
+            TVector3 spos(p->getVertex());
+            _data.mcp_startx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
             _data.mcp_endx[i]   = float(p->getEndpoint()[0]);
             _data.mcp_endy[i]   = float(p->getEndpoint()[1]);
             _data.mcp_endz[i]   = float(p->getEndpoint()[2]);
+            TVector3 epos(p->getEndpoint());
+            _data.mcp_endx_bcalcoord[i] = _bg*epos.Mag() + _g * epos.X();
             _data.mcp_pdg[i]   = p->getPDG();
             _data.mcp_genstatus[i] = p->getGeneratorStatus();
             _data.mcp_simstatus[i] = p->getSimulatorStatus();
@@ -332,6 +336,16 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
                  _data.mcr_hasLeftDetector[i] = mcr->hasLeftDetector();
                  _data.mcr_isFromBeambkg[i] = isFromBeambackground(mcr);
                  _data.mcr_isOriginatedFromISR[i] = isOriginatedFromISR(mcr);
+                 _data.mcr_startx[i] = float(mcr->getVertex()[0]);
+                 _data.mcr_starty[i] = float(mcr->getVertex()[1]);
+                 _data.mcr_startz[i] = float(mcr->getVertex()[2]);
+                 TVector3 spos(mcr->getVertex());
+                 _data.mcr_startx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
+                 _data.mcr_endx[i] = float(mcr->getEndpoint()[0]);
+                 _data.mcr_endy[i] = float(mcr->getEndpoint()[1]);
+                 _data.mcr_endz[i] = float(mcr->getEndpoint()[2]);
+                 TVector3 epos(mcr->getEndpoint());
+                 _data.mcr_endx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
               }
             }
 
@@ -474,6 +488,7 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
              _data.bcal_y[i] = xp.Y();
              _data.bcal_z[i] = xp.Z();
              _data.bcal_phi[i]   = xp.Phi(); 
+             _data.bcal_x_bcalcoord[i] = _bg*xp.Mag() + _g * xp.X();
              //_data.bcal_theta[i] = (xp.Z()>0)?TMath::ATan(xp.Perp()/xp.Z()):TMath::ATan(xp.Perp()/xp.Z())+TMath::Pi(); 
              _data.bcal_theta[i] = TMath::ACos(xp.Z()/xp.Mag()); 
 
@@ -592,9 +607,11 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "mcr_pdg"         , &d.mcr_pdg         , "mcr_pdg[npfos]/I"      );
   _evtdata->Branch( "mcr_genstatus"   , &d.mcr_genstatus   , "mcr_genstatus[npfos]/I");
   _evtdata->Branch( "mcr_startx"      , &d.mcr_startx      , "mcr_startx[npfos]"     );
+  _evtdata->Branch( "mcr_startx_bcalcoord"      , &d.mcr_startx_bcalcoord      , "mcr_startx_bcalcoord[npfos]"     );
   _evtdata->Branch( "mcr_starty"      , &d.mcr_starty      , "mcr_starty[npfos]"     );
   _evtdata->Branch( "mcr_startz"      , &d.mcr_startz      , "mcr_startz[npfos]"     );
   _evtdata->Branch( "mcr_endx"        , &d.mcr_endx        , "mcr_endx[npfos]"       );
+  _evtdata->Branch( "mcr_endx_bcalcoord"      , &d.mcr_endx_bcalcoord      , "mcr_endx_bcalcoord[npfos]"     );
   _evtdata->Branch( "mcr_endy"        , &d.mcr_endy        , "mcr_endy[npfos]"       );
   _evtdata->Branch( "mcr_endz"        , &d.mcr_endz        , "mcr_endz[npfos]"       );
   _evtdata->Branch( "mcr_pdg"         , &d.mcr_pdg         , "mcr_pdg[npfos]/I"      );
@@ -625,9 +642,11 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "mcp_theta"       , &d.mcp_theta       , "mcp_theta[nmcps]"      );
   _evtdata->Branch( "mcp_chrg"        , &d.mcp_chrg        , "mcp_chrg[nmcps]"       );
   _evtdata->Branch( "mcp_startx"      , &d.mcp_startx      , "mcp_startx[nmcps]"     );
+  _evtdata->Branch( "mcp_startx_bcalcoord"      , &d.mcp_startx_bcalcoord      , "mcp_startx_bcalcoord[nmcps]"     );
   _evtdata->Branch( "mcp_starty"      , &d.mcp_starty      , "mcp_starty[nmcps]"     );
   _evtdata->Branch( "mcp_startz"      , &d.mcp_startz      , "mcp_startz[nmcps]"     );
   _evtdata->Branch( "mcp_endx"        , &d.mcp_endx        , "mcp_endx[nmcps]"       );
+  _evtdata->Branch( "mcp_endx_bcalcoord"      , &d.mcp_endx_bcalcoord      , "mcp_endx_bcalcoord[nmcps]"     );
   _evtdata->Branch( "mcp_endy"        , &d.mcp_endy        , "mcp_endy[nmcps]"       );
   _evtdata->Branch( "mcp_endz"        , &d.mcp_endz        , "mcp_endz[nmcps]"       );
   _evtdata->Branch( "mcp_pdg"         , &d.mcp_pdg         , "mcp_pdg[nmcps]/I"      );
@@ -650,6 +669,7 @@ void MonoPhotonProcessor::makeNTuple() {
   //_evtdata->Branch( "nbcalhits"       , &d.nbcalhits       , "nbcalhits[nbcalclrs]/I"            );
   _evtdata->Branch( "bcal_e"           , &d.bcal_e           , "bcal_e[nbcalclrs]"       );
   _evtdata->Branch( "bcal_x"           , &d.bcal_x           , "bcal_x[nbcalclrs]"       );
+  _evtdata->Branch( "bcal_x_bcalcoord" , &d.bcal_x_bcalcoord , "bcal_x_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_y"           , &d.bcal_y           , "bcal_y[nbcalclrs]"       );
   _evtdata->Branch( "bcal_z"           , &d.bcal_z           , "bcal_z[nbcalclrs]"       );
   _evtdata->Branch( "bcal_phi"         , &d.bcal_phi         , "bcal_phi[nbcalclrs]"     );
