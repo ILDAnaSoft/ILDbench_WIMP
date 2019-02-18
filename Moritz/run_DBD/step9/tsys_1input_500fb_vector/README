@@ -1,0 +1,17 @@
+Finally, the limits can be calculated, once the input files 
+1D_Data_Signal_Pe%.1f_Pp%.1f_Lumi%.0f.root and Data_Background_Pe%.1f_Pp%.1f_Lumi%.0f.root exist.
+
+First TSysLimit has to be created with "Make TSysLimit". 
+Note that the main function is in TSysLimit_searches.C.
+The executable will require libstslimit.so, which will be created after make,
+and thus you have to add this directory into LD_LIBRARY_PATH (You can simply use setup.sh in this directory).
+
+Now, the routine can be run. It requires 3 parameters: the WIMP mass, the electron and the 
+positron polarisation e.g.:
+TSysLimit 1 0 0
+
+This will run create a root file with the Lambda value for the 
+expected exclusion. You can print the value with 
+root -l 
+.L print_sensitivity.C
+print_sensitivity(1,0,0)

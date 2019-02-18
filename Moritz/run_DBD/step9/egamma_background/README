@@ -1,0 +1,16 @@
+Preparation :
+The input files are the 6 root files with the selected events 
+(1 for each process and polarisation configuration). 
+List them in individual lines in Selected_Photons.txt. 
+The file rew_input_20180416_pt_e_05.root contains Bhabha events for which no full simulation and reconstruction exists and were hence selected on generator 
+level.
+This file was preparted by Moritz. 
+This is described in detail in section 6.1.6.3 of Moritz thesis
+
+How to run :
+root -l
+.L CreateDataBackground.C
+CreateDataBackground()
+
+
+

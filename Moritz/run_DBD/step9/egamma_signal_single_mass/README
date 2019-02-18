@@ -1,0 +1,8 @@
+This is CPU-intensive. In this directory, egamma_signal_single_mass, we will run only 1 WIMP mass 
+Once everything works, you can move to the full scan of masses (egamma_signal_mass_scan). 
+List the root files with selected events only for the neutrinos in Selected_Photons_Neutrinos.txt 
+
+How to run :
+root -l
+.L CreateDataForSignalAndBackground.C
+CreateDataForSignalAndBackground()

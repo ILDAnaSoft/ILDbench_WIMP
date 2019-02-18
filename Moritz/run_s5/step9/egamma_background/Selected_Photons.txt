@@ -1,0 +1,6 @@
+ILDbench_WIMP/Moritz/run_s5/step2/vv_LR.root
+ILDbench_WIMP/Moritz/run_s5/step2/vv_RL.root
+ILDbench_WIMP/Moritz/run_s5/step2/ee_LL.root
+ILDbench_WIMP/Moritz/run_s5/step2/ee_LR.root
+ILDbench_WIMP/Moritz/run_s5/step2/ee_RL.root
+ILDbench_WIMP/Moritz/run_s5/step2/ee_RR.root

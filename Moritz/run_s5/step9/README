@@ -1,0 +1,4 @@
+egamma_background : prepare ISR photon energy distribution.
+egamma_signal_single_mass : emulate WIMP events by reweighting nung events depending on model parameters for one specific mass.
+egamma_signal_mass_scan : The same as above but for several masses. 
+tsys_1input_500fb_vector : After preparing signal and background distributions above, you can compute exclusion limits in this directory. 
