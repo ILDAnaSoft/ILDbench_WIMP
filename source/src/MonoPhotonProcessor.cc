@@ -19,7 +19,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TMath.h"
-#include "TVector3.h"
+#include "TLorentzVector.h"
 
 using namespace lcio ;
 using namespace marlin ;
@@ -93,8 +93,10 @@ void MonoPhotonProcessor::init() {
 
     makeNTuple();
 
-    _g = TMath::Sqrt(1. + TMath::Tan(_boostAngle)*TMath::Tan(_boostAngle));
-    _bg = TMath::Tan(_boostAngle);
+    double gamma = TMath::Sqrt(1. + TMath::Tan(_boostAngle)*TMath::Tan(_boostAngle));
+    double betaGamma = TMath::Tan(_boostAngle);
+    double beta_x = betaGamma/gamma;
+    _beta = TVector3(beta_x,0.,0.);
 }
 
 
@@ -226,23 +228,22 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             _data.mcp_pz[i]    = pz; 
             TVector3 pv(px,py,pz);
             _data.mcp_pt[i]    = pv.Pt(); 
-            float px_bcalcoord = _bg*pv.Mag() + _g * px; 
-            _data.mcp_px_bcalcoord[i] = px_bcalcoord; 
-            _data.mcp_pt_bcalcoord[i] = TMath::Sqrt(px_bcalcoord*px_bcalcoord+py*py); 
             _data.mcp_phi[i]   = pv.Phi(); 
+            TLorentzVector lpv(pv,p->getEnergy());
+            lpv.Boost(_beta);
+            _data.mcp_px_bcalcoord[i] = lpv.Px(); 
+            _data.mcp_pt_bcalcoord[i] = lpv.Pt();
+            _data.mcp_e_bcalcoord[i] = lpv.E(); 
+            _data.mcp_phi_bcalcoord[i] = lpv.Phi(); 
             //_data.mcp_theta[i] = pv.Theta(); // need to consider 2pi = 0.
             _data.mcp_theta[i] = TMath::ACos(pz/pv.Mag()); 
             _data.mcp_chrg[i]  = p->getCharge();
             _data.mcp_startx[i] = float(p->getVertex()[0]);
             _data.mcp_starty[i] = float(p->getVertex()[1]);
             _data.mcp_startz[i] = float(p->getVertex()[2]);
-            TVector3 spos(p->getVertex());
-            _data.mcp_startx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
             _data.mcp_endx[i]   = float(p->getEndpoint()[0]);
             _data.mcp_endy[i]   = float(p->getEndpoint()[1]);
             _data.mcp_endz[i]   = float(p->getEndpoint()[2]);
-            TVector3 epos(p->getEndpoint());
-            _data.mcp_endx_bcalcoord[i] = _bg*epos.Mag() + _g * epos.X();
             _data.mcp_pdg[i]   = p->getPDG();
             _data.mcp_genstatus[i] = p->getGeneratorStatus();
             _data.mcp_simstatus[i] = p->getSimulatorStatus();
@@ -259,6 +260,7 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
     
     _data.ptmaxphoton_e  = -99999.;
     _data.emaxphoton_e   = -99999.;
+    _data.emaxphoton_index = -1;
     if( colpfo != NULL ){
 
         int nPFO = colpfo->getNumberOfElements()  ;
@@ -320,10 +322,13 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
                  _data.mcr_pz[i]    = pz; 
                  TVector3 pv(px,py,pz);
                  _data.mcr_pt[i]    = pv.Pt(); 
-                 float px_bcalcoord = _bg*pv.Mag() + _g * px; 
-                 _data.mcr_px_bcalcoord[i] = px_bcalcoord; 
-                 _data.mcr_pt_bcalcoord[i] = TMath::Sqrt(px_bcalcoord*px_bcalcoord+py*py); 
                  _data.mcr_phi[i]   = pv.Phi(); 
+                 TLorentzVector lpv(pv,p->getEnergy());
+                 lpv.Boost(_beta);
+                 _data.mcr_px_bcalcoord[i] = lpv.Px(); 
+                 _data.mcr_pt_bcalcoord[i] = lpv.Pt(); 
+                 _data.mcr_e_bcalcoord[i] = lpv.E(); 
+                 _data.mcr_phi_bcalcoord[i]   = lpv.Phi(); 
                  //_data.mcr_theta[i] = pv.Theta(); // need to consider 2pi = 0.
                  //_data.mcr_theta[i] = TMath::ATan(pv.Perp()/pz); 
                  _data.mcr_theta[i] = TMath::ACos(pz/pv.Mag()); 
@@ -339,13 +344,9 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
                  _data.mcr_startx[i] = float(mcr->getVertex()[0]);
                  _data.mcr_starty[i] = float(mcr->getVertex()[1]);
                  _data.mcr_startz[i] = float(mcr->getVertex()[2]);
-                 TVector3 spos(mcr->getVertex());
-                 _data.mcr_startx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
                  _data.mcr_endx[i] = float(mcr->getEndpoint()[0]);
                  _data.mcr_endy[i] = float(mcr->getEndpoint()[1]);
                  _data.mcr_endz[i] = float(mcr->getEndpoint()[2]);
-                 TVector3 epos(mcr->getEndpoint());
-                 _data.mcr_endx_bcalcoord[i] = _bg*spos.Mag() + _g * spos.X();
               }
             }
 
@@ -358,11 +359,13 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             _data.pfo_pz[i]    = pz; 
             TVector3 pv(px,py,pz);
             _data.pfo_pt[i]    = pv.Pt(); 
-            float px_bcalcoord = _bg*pv.Mag() + _g * px; 
-            TVector3 pv_bcalcoord(px_bcalcoord,py,pz);
-            _data.pfo_px_bcalcoord[i] = px_bcalcoord; 
-            _data.pfo_pt_bcalcoord[i] = TMath::Sqrt(px_bcalcoord*px_bcalcoord+py*py); 
             _data.pfo_phi[i]   = pv.Phi(); 
+            TLorentzVector lpv(pv,p->getEnergy());
+            lpv.Boost(_beta);
+            _data.pfo_px_bcalcoord[i] = lpv.Px(); 
+            _data.pfo_pt_bcalcoord[i] = lpv.Pt(); 
+            _data.pfo_e_bcalcoord[i] = lpv.E(); 
+            _data.pfo_phi_bcalcoord[i] = lpv.Phi(); 
             //_data.pfo_theta[i] = pv.Theta(); // need to consider 2pi = 0.
             //_data.pfo_theta[i] = TMath::ATan(pv.Perp()/pz); 
             //_data.pfo_theta[i] = (pz>0)?TMath::ATan(pv.Perp()/pz):TMath::ATan(pv.Perp()/pz)+TMath::Pi(); 
@@ -482,20 +485,30 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
              _data.bcal_theta[icalhits] = (xp.Z()>0)?TMath::ATan(xp.Perp()/xp.Z()):TMath::ATan(xp.Perp()/xp.Z())+TMath::Pi(); 
            }
 #else // it turned out that clusvec.size is always 1 if exists.
-             _data.bcal_e[i] = clusvec[0]->getEnergy();
+             //_data.bcal_e[i] = clusvec[0]->getEnergy();
              TVector3 xp(clusvec[0]->getPosition());
              _data.bcal_x[i] = xp.X();
              _data.bcal_y[i] = xp.Y();
              _data.bcal_z[i] = xp.Z();
-             _data.bcal_phi[i]   = xp.Phi(); 
-             _data.bcal_x_bcalcoord[i] = _bg*xp.Mag() + _g * xp.X();
-             //_data.bcal_theta[i] = (xp.Z()>0)?TMath::ATan(xp.Perp()/xp.Z()):TMath::ATan(xp.Perp()/xp.Z())+TMath::Pi(); 
-             _data.bcal_theta[i] = TMath::ACos(xp.Z()/xp.Mag()); 
+             _data.bcal_r[i] = xp.Perp();
 
-             TVector3 pv = _data.bcal_e[i] * xp.Unit(); // asuming M = 0, pvtx=(0,0,0).
-             float px_bcalcoord = _bg*pv.Mag() + _g * pv.X(); 
-             _data.bcal_px_bcalcoord[i] = px_bcalcoord; 
-             _data.bcal_pt_bcalcoord[i] = TMath::Sqrt(px_bcalcoord*px_bcalcoord+pv.Y()*pv.Y()); 
+             _data.bcal_e[i] = p->getEnergy();
+             TVector3 pv(p->getMomentum()); 
+             _data.bcal_px[i] = pv.X();
+             _data.bcal_py[i] = pv.Y();
+             _data.bcal_pz[i] = pv.Z();
+             _data.bcal_pt[i] = pv.Pt();
+             _data.bcal_phi[i]   = pv.Phi(); 
+             _data.bcal_theta[i] = TMath::ACos(pv.Z()/pv.Mag()); 
+             TLorentzVector lpv(pv,p->getEnergy());
+             lpv.Boost(_beta);
+             _data.bcal_phi_bcalcoord[i] = lpv.Phi(); 
+             _data.bcal_px_bcalcoord[i] = lpv.Px(); 
+             _data.bcal_pt_bcalcoord[i] = lpv.Pt(); 
+             _data.bcal_e_bcalcoord[i] = lpv.E(); 
+             float x_bcal = xp.X()*lpv.Px()/pv.Px();
+             _data.bcal_x_bcalcoord[i] = x_bcal;
+             _data.bcal_r_bcalcoord[i] = TMath::Sqrt(x_bcal*x_bcal+xp.Y()*xp.Y());
 #endif
         }
     }
@@ -552,6 +565,8 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "pfo_pt"          , &d.pfo_pt          , "pfo_pt[npfos]"         );
   _evtdata->Branch( "pfo_px_bcalcoord", &d.pfo_px_bcalcoord, "pfo_px_bcalcoord[npfos]");
   _evtdata->Branch( "pfo_pt_bcalcoord", &d.pfo_pt_bcalcoord, "pfo_pt_bcalcoord[npfos]");
+  _evtdata->Branch( "pfo_e_bcalcoord", &d.pfo_e_bcalcoord, "pfo_e_bcalcoord[npfos]");
+  _evtdata->Branch( "pfo_phi_bcalcoord", &d.pfo_phi_bcalcoord, "pfo_phi_bcalcoord[npfos]");
   _evtdata->Branch( "pfo_phi"         , &d.pfo_phi         , "pfo_phi[npfos]"        );
   _evtdata->Branch( "pfo_theta"       , &d.pfo_theta       , "pfo_theta[npfos]"      );
   //_evtdata->Branch( "pfo_startx"      , &d.pfo_startx      , "pfo_startx[npfos]"     );
@@ -601,17 +616,17 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "mcr_pt"          , &d.mcr_pt          , "mcr_pt[npfos]"         );
   _evtdata->Branch( "mcr_px_bcalcoord", &d.mcr_px_bcalcoord, "mcr_px_bcalcoord[npfos]");
   _evtdata->Branch( "mcr_pt_bcalcoord", &d.mcr_pt_bcalcoord, "mcr_pt_bcalcoord[npfos]");
+  _evtdata->Branch( "mcr_e_bcalcoord", &d.mcr_e_bcalcoord, "mcr_e_bcalcoord[npfos]");
+  _evtdata->Branch( "mcr_phi_bcalcoord", &d.mcr_phi_bcalcoord, "mcr_phi_bcalcoord[npfos]");
   _evtdata->Branch( "mcr_phi"         , &d.mcr_phi         , "mcr_phi[npfos]"        );
   _evtdata->Branch( "mcr_theta"       , &d.mcr_theta       , "mcr_theta[npfos]"      );
   _evtdata->Branch( "mcr_chrg"        , &d.mcr_chrg        , "mcr_chrg[npfos]"       );
   _evtdata->Branch( "mcr_pdg"         , &d.mcr_pdg         , "mcr_pdg[npfos]/I"      );
   _evtdata->Branch( "mcr_genstatus"   , &d.mcr_genstatus   , "mcr_genstatus[npfos]/I");
   _evtdata->Branch( "mcr_startx"      , &d.mcr_startx      , "mcr_startx[npfos]"     );
-  _evtdata->Branch( "mcr_startx_bcalcoord"      , &d.mcr_startx_bcalcoord      , "mcr_startx_bcalcoord[npfos]"     );
   _evtdata->Branch( "mcr_starty"      , &d.mcr_starty      , "mcr_starty[npfos]"     );
   _evtdata->Branch( "mcr_startz"      , &d.mcr_startz      , "mcr_startz[npfos]"     );
   _evtdata->Branch( "mcr_endx"        , &d.mcr_endx        , "mcr_endx[npfos]"       );
-  _evtdata->Branch( "mcr_endx_bcalcoord"      , &d.mcr_endx_bcalcoord      , "mcr_endx_bcalcoord[npfos]"     );
   _evtdata->Branch( "mcr_endy"        , &d.mcr_endy        , "mcr_endy[npfos]"       );
   _evtdata->Branch( "mcr_endz"        , &d.mcr_endz        , "mcr_endz[npfos]"       );
   _evtdata->Branch( "mcr_pdg"         , &d.mcr_pdg         , "mcr_pdg[npfos]/I"      );
@@ -638,15 +653,15 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "mcp_pt"          , &d.mcp_pt          , "mcp_pt[nmcps]"         );
   _evtdata->Branch( "mcp_px_bcalcoord", &d.mcp_px_bcalcoord, "mcp_px_bcalcoord[nmcps]");
   _evtdata->Branch( "mcp_pt_bcalcoord", &d.mcp_pt_bcalcoord, "mcp_pt_bcalcoord[nmcps]");
+  _evtdata->Branch( "mcp_e_bcalcoord", &d.mcp_e_bcalcoord, "mcp_e_bcalcoord[nmcps]");
+  _evtdata->Branch( "mcp_phi_bcalcoord", &d.mcp_phi_bcalcoord, "mcp_phi_bcalcoord[nmcps]");
   _evtdata->Branch( "mcp_phi"         , &d.mcp_phi         , "mcp_phi[nmcps]"        );
   _evtdata->Branch( "mcp_theta"       , &d.mcp_theta       , "mcp_theta[nmcps]"      );
   _evtdata->Branch( "mcp_chrg"        , &d.mcp_chrg        , "mcp_chrg[nmcps]"       );
   _evtdata->Branch( "mcp_startx"      , &d.mcp_startx      , "mcp_startx[nmcps]"     );
-  _evtdata->Branch( "mcp_startx_bcalcoord"      , &d.mcp_startx_bcalcoord      , "mcp_startx_bcalcoord[nmcps]"     );
   _evtdata->Branch( "mcp_starty"      , &d.mcp_starty      , "mcp_starty[nmcps]"     );
   _evtdata->Branch( "mcp_startz"      , &d.mcp_startz      , "mcp_startz[nmcps]"     );
   _evtdata->Branch( "mcp_endx"        , &d.mcp_endx        , "mcp_endx[nmcps]"       );
-  _evtdata->Branch( "mcp_endx_bcalcoord"      , &d.mcp_endx_bcalcoord      , "mcp_endx_bcalcoord[nmcps]"     );
   _evtdata->Branch( "mcp_endy"        , &d.mcp_endy        , "mcp_endy[nmcps]"       );
   _evtdata->Branch( "mcp_endz"        , &d.mcp_endz        , "mcp_endz[nmcps]"       );
   _evtdata->Branch( "mcp_pdg"         , &d.mcp_pdg         , "mcp_pdg[nmcps]/I"      );
@@ -668,14 +683,22 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "nbcalclrs"       , &d.nbcalclrs       , "nbcalclrs/I"            );
   //_evtdata->Branch( "nbcalhits"       , &d.nbcalhits       , "nbcalhits[nbcalclrs]/I"            );
   _evtdata->Branch( "bcal_e"           , &d.bcal_e           , "bcal_e[nbcalclrs]"       );
+  _evtdata->Branch( "bcal_px"          , &d.bcal_px          , "bcal_px[nbcalclrs]"      );
+  _evtdata->Branch( "bcal_py"          , &d.bcal_py          , "bcal_py[nbcalclrs]"      );
+  _evtdata->Branch( "bcal_pz"          , &d.bcal_pz          , "bcal_pz[nbcalclrs]"      );
+  _evtdata->Branch( "bcal_pt"          , &d.bcal_pt          , "bcal_pt[nbcalclrs]"      );
   _evtdata->Branch( "bcal_x"           , &d.bcal_x           , "bcal_x[nbcalclrs]"       );
-  _evtdata->Branch( "bcal_x_bcalcoord" , &d.bcal_x_bcalcoord , "bcal_x_bcalcoord[nbcalclrs]");
+  _evtdata->Branch( "bcal_r"           , &d.bcal_r           , "bcal_r[nbcalclrs]"       );
   _evtdata->Branch( "bcal_y"           , &d.bcal_y           , "bcal_y[nbcalclrs]"       );
   _evtdata->Branch( "bcal_z"           , &d.bcal_z           , "bcal_z[nbcalclrs]"       );
   _evtdata->Branch( "bcal_phi"         , &d.bcal_phi         , "bcal_phi[nbcalclrs]"     );
   _evtdata->Branch( "bcal_theta"       , &d.bcal_theta       , "bcal_theta[nbcalclrs]"   );
+  _evtdata->Branch( "bcal_x_bcalcoord" , &d.bcal_x_bcalcoord , "bcal_x_bcalcoord[nbcalclrs]");
+  _evtdata->Branch( "bcal_r_bcalcoord" , &d.bcal_r_bcalcoord , "bcal_r_bcalcoord[nbcalclrs]");
+  _evtdata->Branch( "bcal_phi_bcalcoord" , &d.bcal_phi_bcalcoord , "bcal_phi_bcalcoord[nbcalclrs]"     );
   _evtdata->Branch( "bcal_px_bcalcoord", &d.bcal_px_bcalcoord, "bcal_px_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_pt_bcalcoord", &d.bcal_pt_bcalcoord, "bcal_pt_bcalcoord[nbcalclrs]");
+  _evtdata->Branch( "bcal_e_bcalcoord", &d.bcal_e_bcalcoord, "bcal_e_bcalcoord[nbcalclrs]");
   return;
 
 }

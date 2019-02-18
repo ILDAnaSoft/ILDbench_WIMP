@@ -11,9 +11,10 @@
 
 #include "UTIL/LCRelationNavigator.h"
 
+#include "TVector3.h"
+
 class TFile;
 class TTree;
-class TVector3;
 const int NMAX_PFOS   = 500;
 const int NMAX_MCPS   = 20000;
 const int NMAX_CLRS   = 500;
@@ -117,6 +118,8 @@ class MonoPhotonProcessor : public Processor {
     float  pfo_pt[NMAX_PFOS];
     float  pfo_px_bcalcoord[NMAX_PFOS];
     float  pfo_pt_bcalcoord[NMAX_PFOS];
+    float  pfo_e_bcalcoord[NMAX_PFOS];
+    float  pfo_phi_bcalcoord[NMAX_PFOS];
     float  pfo_phi[NMAX_PFOS];
     float  pfo_theta[NMAX_PFOS];
     //float  pfo_startx[NMAX_PFOS];
@@ -169,15 +172,15 @@ class MonoPhotonProcessor : public Processor {
     float  mcr_pt[NMAX_PFOS];
     float  mcr_px_bcalcoord[NMAX_PFOS];
     float  mcr_pt_bcalcoord[NMAX_PFOS];
+    float  mcr_e_bcalcoord[NMAX_PFOS];
+    float  mcr_phi_bcalcoord[NMAX_PFOS];
     float  mcr_phi[NMAX_PFOS];
     float  mcr_theta[NMAX_PFOS];
     float  mcr_chrg[NMAX_PFOS];
     float  mcr_startx[NMAX_PFOS];
-    float  mcr_startx_bcalcoord[NMAX_PFOS];
     float  mcr_starty[NMAX_PFOS];
     float  mcr_startz[NMAX_PFOS];
     float  mcr_endx[NMAX_PFOS];
-    float  mcr_endx_bcalcoord[NMAX_PFOS];
     float  mcr_endy[NMAX_PFOS];
     float  mcr_endz[NMAX_PFOS];
     int    mcr_pdg[NMAX_PFOS];
@@ -206,15 +209,15 @@ class MonoPhotonProcessor : public Processor {
     float  mcp_pt[NMAX_MCPS];
     float  mcp_px_bcalcoord[NMAX_MCPS];
     float  mcp_pt_bcalcoord[NMAX_MCPS];
+    float  mcp_e_bcalcoord[NMAX_MCPS];
+    float  mcp_phi_bcalcoord[NMAX_MCPS];
     float  mcp_phi[NMAX_MCPS];
     float  mcp_theta[NMAX_MCPS];
     float  mcp_chrg[NMAX_MCPS];
     float  mcp_startx[NMAX_MCPS];
-    float  mcp_startx_bcalcoord[NMAX_MCPS];
     float  mcp_starty[NMAX_MCPS];
     float  mcp_startz[NMAX_MCPS];
     float  mcp_endx[NMAX_MCPS];
-    float  mcp_endx_bcalcoord[NMAX_MCPS];
     float  mcp_endy[NMAX_MCPS];
     float  mcp_endz[NMAX_MCPS];
     int    mcp_pdg[NMAX_MCPS];
@@ -238,14 +241,22 @@ class MonoPhotonProcessor : public Processor {
     int    nbcalclrs ;    // # of BCal clusters;
     //int    nbcalhits[NMAX_CLRS];    // # of BCal cluster hits; Practically this is always 1.
     float  bcal_e[NMAX_CLRS];
+    float  bcal_px[NMAX_CLRS];
+    float  bcal_py[NMAX_CLRS];
+    float  bcal_pz[NMAX_CLRS];
+    float  bcal_pt[NMAX_CLRS];
     float  bcal_x[NMAX_CLRS];
-    float  bcal_x_bcalcoord[NMAX_CLRS];
     float  bcal_y[NMAX_CLRS];
     float  bcal_z[NMAX_CLRS];
+    float  bcal_r[NMAX_CLRS];
+    float  bcal_x_bcalcoord[NMAX_CLRS];
+    float  bcal_r_bcalcoord[NMAX_CLRS];
     float  bcal_phi[NMAX_CLRS];
+    float  bcal_phi_bcalcoord[NMAX_CLRS];
     float  bcal_theta[NMAX_CLRS];
     float  bcal_px_bcalcoord[NMAX_CLRS];
     float  bcal_pt_bcalcoord[NMAX_CLRS];
+    float  bcal_e_bcalcoord[NMAX_CLRS];
   };
 
   EVTFILLDATA _data;
@@ -254,8 +265,7 @@ class MonoPhotonProcessor : public Processor {
   std::string _rootfilename;
 
   float _boostAngle;
-  double _g; // gamma factor
-  double _bg; // beta * gamma
+  TVector3 _beta; // beta
 
 
 } ;

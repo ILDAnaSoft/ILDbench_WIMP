@@ -28,7 +28,9 @@ we can commonly use the other parts (e.g. analysis.C, eventselection.C).
 
 3) Run plots/runDraw.C macro in ROOT framework. This main function
 is to compile/decorate histgrams. 
-("Save as .C" doesn't work well for THStack objects at the time of this writing.)
+("Save as .C" does not work well for THStack objects at the time of this writing.)
+
+4) Run plots/runMakeSigAndBkgDist.C macro for limit calculations.
 
 ### Installation
 

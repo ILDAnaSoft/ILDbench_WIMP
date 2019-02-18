@@ -24,3 +24,5 @@
 	- Move to plots directory. 
 	- Run runDraw.C. 
 		`root -l runDraw.C`
+
+4) Run runDraw.C (produce PDF files.)
