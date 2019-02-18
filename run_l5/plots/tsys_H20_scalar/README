@@ -1,0 +1,11 @@
+Prepartion:
+Several macro files in ILDbench_WIMP/macros are used in
+runDraw.C and runMakeSigAndBkgDist.C. You have to modify
+the include file path with accordance with your environment.
+
+(Originally it was designed so that it works without any modification
+by using gROOT->LoadMacro(), but it became to be inconvenient 
+when we made the macro to have a input argument for mass scan run.)
+
+aux directory includes some auxiiary files prepared by Moritz.
+These are necessary to run runMakeSigAndBkgDist.C.
