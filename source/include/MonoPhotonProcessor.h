@@ -227,6 +227,8 @@ class MonoPhotonProcessor : public Processor {
     int    mcp_daughterIndex[NMAX_MCPS][NMAX_DAUGHTERS];
     int    mcp_genstatus[NMAX_MCPS];
     int    mcp_simstatus[NMAX_MCPS];
+    bool   mcp_isDecayedInTracker[NMAX_MCPS];
+    bool   mcp_isDecayedInCalorimeter[NMAX_MCPS];
     bool   mcp_iscreatedinsim[NMAX_MCPS];
     bool   mcp_isoverlay[NMAX_MCPS];
     bool   mcp_hasLeftDetector[NMAX_MCPS];
@@ -254,6 +256,7 @@ class MonoPhotonProcessor : public Processor {
     float  bcal_phi[NMAX_CLRS];
     float  bcal_phi_bcalcoord[NMAX_CLRS];
     float  bcal_theta[NMAX_CLRS];
+    float  bcal_theta_bcalcoord[NMAX_CLRS];
     float  bcal_px_bcalcoord[NMAX_CLRS];
     float  bcal_pt_bcalcoord[NMAX_CLRS];
     float  bcal_e_bcalcoord[NMAX_CLRS];

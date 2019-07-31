@@ -24,3 +24,6 @@
 	- Move to plots directory. 
 	- Run runDraw.C. 
 		`root -l runDraw.C`
+
+3') Plot exclusion limit (produce PDF files.)
+	- See README in plots directory. 

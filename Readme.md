@@ -48,8 +48,9 @@ make install
   b) cd ILDbench_WIMP
   c) export MPDIR="$PWD"
      export MARLIN_DLL="$MPDIR/MonoPhotonProcessors/lib/libMonoPhotonProcessors.so:$MARLIN_DLL"
+     export LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH}
 
-  For convenience, would be better to copy init_ilcsoft.sh to this directory and add b) into it.
+  For convenience, would be better to copy init_ilcsoft.sh to this directory and add c) into it.
 
 1) cd run_DBD (or run_l5, run_s5)
 3) cd nung (or bhabhang)

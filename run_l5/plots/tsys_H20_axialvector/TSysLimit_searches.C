@@ -13,6 +13,7 @@
 #include <TSysLimitResult.h>
 #include <TSysLimitScan.h>
 #include "TTree.h"
+#include "TSystem.h"
 
 using namespace std;
 
@@ -20,7 +21,12 @@ using namespace std;
 
 int main(int argc, char const *argv[]) {
 
-
+ if (gSystem->AccessPathName("outputs")) {
+  cerr << "outputs does not exist!" << endl;
+  cerr << "Creating outputs directory..." << endl;
+  gSystem->Exec("mkdir outputs");
+  cerr << "Done!" << endl;
+ } 
 
 
 
@@ -61,7 +67,8 @@ int main(int argc, char const *argv[]) {
 
     //cout<<" Pe = "<<Pe<<"| Pp = "<<Pp<<endl;
     
-    sprintf(filename,"outputs/Sensitivity_Lumi_%.0f_Lumi_LL_%.0f_Lumi_LR_%.0f_Lumi_RL_%.0f_Lumi_RR_%.0f_Mass%.0f_2Sigma.root",lumi_tot,lumi_LL,lumi_LR,lumi_RL,lumi_RR,_mass);
+    //sprintf(filename,"outputs/Sensitivity_Lumi_%.0f_Lumi_LL_%.0f_Lumi_LR_%.0f_Lumi_RL_%.0f_Lumi_RR_%.0f_Mass%.0f_2Sigma.root",lumi_tot,lumi_LL,lumi_LR,lumi_RL,lumi_RR,_mass);
+    sprintf(filename,"outputs/Sensitivity_Lumi_%.0f_Lumi_LL_%.0f_Lumi_LR_%.0f_Lumi_RL_%.0f_Lumi_RR_%.0f_Mass%.3g_2Sigma.root",lumi_tot,lumi_LL,lumi_LR,lumi_RL,lumi_RR,_mass);
 //    sprintf(filename,"Results/Sensitivity_Pe%.1f_Pp%.1f_Lumi%.0f_Mass%.0f_3Sigma_CLTSys_onebin_with_errors.root",Pe,Pp,lumi,_mass);
 //    sprintf(filename,"Results/Sensitivity_Pe%.1f_Pp%.1f_Lumi%.0f_Mass%.0f_90CLTSys_lumi_pole_polp_beamspec_select_withsys_corel.root",Pe,Pp,lumi,_mass);    
     
@@ -101,7 +108,40 @@ for (int l=0;l<3;l++){
     } else {cout<<"###########################FALD ############################### "<<endl;}
 
     sprintf(filename,"Sensitivity %s",_operator);
+#if 0
      Sensitivity = new TH1D(filename,filename,250,1,250);
+#else
+const int nmass = 255;
+const double masses[nmass] = 
+{ 1.e-9, 1.e-6, 1.e-3, 0.1,
+  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10.,
+ 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.,
+ 21., 22., 23., 24., 25., 26., 27., 28., 29., 30.,
+ 31., 32., 33., 34., 35., 36., 37., 38., 39., 40.,
+ 41., 42., 43., 44., 45., 46., 47., 48., 49., 50.,
+ 51., 52., 53., 54., 55., 56., 57., 58., 59., 60.,
+ 61., 62., 63., 64., 65., 66., 67., 68., 69., 70.,
+ 71., 72., 73., 74., 75., 76., 77., 78., 79., 80.,
+ 81., 82., 83., 84., 85., 86., 87., 88., 89., 90.,
+ 91., 92., 93., 94., 95., 96., 97., 98., 99.,100.,
+101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,
+111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,
+121.,122.,123.,124.,125.,126.,127.,128.,129.,130.,
+131.,132.,133.,134.,135.,136.,137.,138.,139.,140.,
+141.,142.,143.,144.,145.,146.,147.,148.,149.,150.,
+151.,152.,153.,154.,155.,156.,157.,158.,159.,160.,
+161.,162.,163.,164.,165.,166.,167.,168.,169.,170.,
+171.,172.,173.,174.,175.,176.,177.,178.,179.,180.,
+181.,182.,183.,184.,185.,186.,187.,188.,189.,190.,
+191.,192.,193.,194.,195.,196.,197.,198.,199.,200.,
+201.,202.,203.,204.,205.,206.,207.,208.,209.,210.,
+211.,212.,213.,214.,215.,216.,217.,218.,219.,220.,
+221.,222.,223.,224.,225.,226.,227.,228.,229.,230.,
+231.,232.,233.,234.,235.,236.,237.,238.,239.,240.,
+241.,242.,243.,244.,245.,246.,247.,248.,249.,250.,
+251.};
+     Sensitivity = new TH1D(filename,filename,nmass-1,masses);
+#endif
     cout<<_operator<<endl;
 
 
@@ -178,24 +218,28 @@ for (int l=0;l<3;l++){
 #else
         stringstream finname1;
         finname1 << "../outputs/output_mass" << _mass << "_epol-0.8_ppol-0.3_op" << l << ".root" << ends;
+        //finname1 << "../outputs_test/output_mass" << _mass << "_epol-0.8_ppol-0.3_op" << l << ".root" << ends;
         TFile * infile_sig1 = new TFile(finname1.str().data(),"READ");
         TH1D* sh1=(TH1D*)infile_sig1->Get("hE_wimp");
         TH1D* bh1=(TH1D*)infile_sig1->Get("hE_bkg");
 
         stringstream finname2;
-        finname2 << "../outputs/output_mass" << _mass << "_epol-0.8_ppol0.3_op" << l << ".root" << ends;
+        //finname2 << "../outputs/output_mass" << _mass << "_epol-0.8_ppol0.3_op" << l << ".root" << ends;
+        finname2 << "../outputs_test/output_mass" << _mass << "_epol-0.8_ppol0.3_op" << l << ".root" << ends;
         TFile * infile_sig2 = new TFile(finname2.str().data(),"READ");
         TH1D* sh2=(TH1D*)infile_sig2->Get("hE_wimp");
         TH1D* bh2=(TH1D*)infile_sig2->Get("hE_bkg");
 
         stringstream finname3;
         finname3 << "../outputs/output_mass" << _mass << "_epol0.8_ppol-0.3_op" << l << ".root" << ends;
+        //finname3 << "../outputs_test/output_mass" << _mass << "_epol0.8_ppol-0.3_op" << l << ".root" << ends;
         TFile * infile_sig3 = new TFile(finname3.str().data(),"READ");
         TH1D* sh3=(TH1D*)infile_sig3->Get("hE_wimp");
         TH1D* bh3=(TH1D*)infile_sig3->Get("hE_bkg");
 
         stringstream finname4;
         finname4 << "../outputs/output_mass" << _mass << "_epol0.8_ppol0.3_op" << l << ".root" << ends;
+        //finname4 << "../outputs_test/output_mass" << _mass << "_epol0.8_ppol0.3_op" << l << ".root" << ends;
         TFile * infile_sig4 = new TFile(finname4.str().data(),"READ");
         TH1D* sh4=(TH1D*)infile_sig4->Get("hE_wimp");
         TH1D* bh4=(TH1D*)infile_sig4->Get("hE_bkg");
@@ -436,300 +480,359 @@ cout<<"BINS = "<<histBgrSys1[0][0]->GetNbinsX()<<endl;
 
 Double_t error_size=0;
 
-	for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=0.00513901;	else
-if(i<=12)error_size=0.00564924;	else
-if(i<=20)error_size=0.00907805;	else
-if(i<=28)error_size=0.0107942;	else
-if(i<=36)error_size=0.00741422;	else
-if(i<=44)error_size=0.00558221;	else
-if(i<=52)error_size=0.00717615;	else
-if(i<=60)error_size=0.00739937;	else
-if(i<=68)error_size=0.0127861;	else
-if(i<=76)error_size=0.0199377;	else
-if(i<=84)error_size=0.025701;	else
-if(i<=92)error_size=0.026607;	else
-if(i<=100)error_size=0.0245228;	else
-if(i<=108)error_size=0.0258784;	else
-if(i<=116)error_size=0.0248568;	else
-if(i<=124)error_size=0.0249768;	else
-if(i<=132)error_size=0.0221094;	else
-if(i<=140)error_size=0.021107;	else
-if(i<=148)error_size=0.0204976;	else
-if(i<=156)error_size=0.0197112;	else
-if(i<=164)error_size=0.0180937;	else
-if(i<=172)error_size=0.0203634;	else
-if(i<=180)error_size=0.0218546;	else
-if(i<=188)error_size=0.022685;	else
-if(i<=196)error_size=0.0230076;	else
-if(i<=204)error_size=0.0217947;	else
-if(i<=212)error_size=0.0200269;	else
-if(i<=220)error_size=0.0167556;	else{cout<<"Same size";}
+//	for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=0.00515536;	else
+if(i<=12)error_size=0.00565114;	else
+if(i<=20)error_size=0.00912941;	else
+if(i<=28)error_size=0.0108754;	else
+if(i<=36)error_size=0.00745131;	else
+if(i<=44)error_size=0.00558222;	else
+if(i<=52)error_size=0.00718882;	else
+if(i<=60)error_size=0.00739812;	else
+if(i<=68)error_size=0.0127743;	else
+if(i<=76)error_size=0.0199586;	else
+if(i<=84)error_size=0.0256957;	else
+if(i<=92)error_size=0.0266059;	else
+if(i<=100)error_size=0.0245221;	else
+if(i<=108)error_size=0.0258785;	else
+if(i<=116)error_size=0.0248569;	else
+if(i<=124)error_size=0.0249769;	else
+if(i<=132)error_size=0.0221096;	else
+if(i<=140)error_size=0.0211073;	else
+if(i<=148)error_size=0.0204979;	else
+if(i<=156)error_size=0.0197116;	else
+if(i<=164)error_size=0.0180942;	else
+if(i<=172)error_size=0.0203637;	else
+if(i<=180)error_size=0.0218549;	else
+if(i<=188)error_size=0.0226852;	else
+if(i<=196)error_size=0.0230078;	else
+if(i<=204)error_size=0.0217949;	else
+if(i<=212)error_size=0.0200271;	else
+if(i<=220)error_size=0.0167558;	else
+if(i<=228)error_size=0.0117962;	else
+if(i<=236)error_size=0.00524025;	else
+if(i<=244)error_size=-0.00221275;	else
+if(i<=252)error_size=-0.0051049;	else
+if(i<=260)error_size=-0.00445201;	else
+{cout<<"Same size";}
 
 beamspec_bg_up3->Fill(i,error_size);
 }
 
-	for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=-0.00549443;	else
-if(i<=12)error_size=-0.00603997;	else
-if(i<=20)error_size=-0.00970597;	else
-if(i<=28)error_size=-0.0115409;	else
-if(i<=36)error_size=-0.00792705;	else
-if(i<=44)error_size=-0.00596829;	else
-if(i<=52)error_size=-0.0076725;	else
-if(i<=60)error_size=-0.00791117;	else
-if(i<=68)error_size=-0.0136706;	else
-if(i<=76)error_size=-0.0213169;	else
-if(i<=84)error_size=-0.0274788;	else
-if(i<=92)error_size=-0.0284476;	else
-if(i<=100)error_size=-0.0262192;	else
-if(i<=108)error_size=-0.0276685;	else
-if(i<=116)error_size=-0.0265763;	else
-if(i<=124)error_size=-0.0267045;	else
-if(i<=132)error_size=-0.0236388;	else
-if(i<=140)error_size=-0.0225671;	else
-if(i<=148)error_size=-0.0219155;	else
-if(i<=156)error_size=-0.0210747;	else
-if(i<=164)error_size=-0.0193453;	else
-if(i<=172)error_size=-0.021772;	else
-if(i<=180)error_size=-0.0233664;	else
-if(i<=188)error_size=-0.0242542;	else
-if(i<=196)error_size=-0.0245992;	else
-if(i<=204)error_size=-0.0233023;	else
-if(i<=212)error_size=-0.0214122;	else
-if(i<=220)error_size=-0.0179146;	else{cout<<"Same size";}
+//	for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=-0.00551192;	else
+if(i<=12)error_size=-0.00604199;	else
+if(i<=20)error_size=-0.00976088;	else
+if(i<=28)error_size=-0.0116276;	else
+if(i<=36)error_size=-0.0079667;	else
+if(i<=44)error_size=-0.00596831;	else
+if(i<=52)error_size=-0.00768605;	else
+if(i<=60)error_size=-0.00790983;	else
+if(i<=68)error_size=-0.0136579;	else
+if(i<=76)error_size=-0.0213392;	else
+if(i<=84)error_size=-0.0274732;	else
+if(i<=92)error_size=-0.0284463;	else
+if(i<=100)error_size=-0.0262184;	else
+if(i<=108)error_size=-0.0276686;	else
+if(i<=116)error_size=-0.0265764;	else
+if(i<=124)error_size=-0.0267047;	else
+if(i<=132)error_size=-0.0236391;	else
+if(i<=140)error_size=-0.0225674;	else
+if(i<=148)error_size=-0.0219158;	else
+if(i<=156)error_size=-0.0210751;	else
+if(i<=164)error_size=-0.0193458;	else
+if(i<=172)error_size=-0.0217724;	else
+if(i<=180)error_size=-0.0233667;	else
+if(i<=188)error_size=-0.0242545;	else
+if(i<=196)error_size=-0.0245994;	else
+if(i<=204)error_size=-0.0233025;	else
+if(i<=212)error_size=-0.0214125;	else
+if(i<=220)error_size=-0.0179148;	else
+if(i<=228)error_size=-0.0126122;	else
+if(i<=236)error_size=-0.00560269;	else
+if(i<=244)error_size=0.00236589;	else
+if(i<=252)error_size=0.00545811;	else
+if(i<=260)error_size=0.00476005;	else
+{cout<<"Same size";}
 
  beamspec_bg_down3->Fill(i,error_size);
 }
 
 
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=0.00280361;	else
-if(i<=12)error_size=0.00273614;	else
-if(i<=20)error_size=0.00333707;	else
-if(i<=28)error_size=0.003042;	else
-if(i<=36)error_size=0.00288497;	else
-if(i<=44)error_size=0.00239821;	else
-if(i<=52)error_size=0.00258238;	else
-if(i<=60)error_size=0.00235638;	else
-if(i<=68)error_size=0.00325895;	else
-if(i<=76)error_size=0.00394164;	else
-if(i<=84)error_size=0.00472285;	else
-if(i<=92)error_size=0.00490326;	else
-if(i<=100)error_size=0.00476331;	else
-if(i<=108)error_size=0.00505717;	else
-if(i<=116)error_size=0.00496697;	else
-if(i<=124)error_size=0.00476661;	else
-if(i<=132)error_size=0.00467325;	else
-if(i<=140)error_size=0.00442174;	else
-if(i<=148)error_size=0.00466676;	else
-if(i<=156)error_size=0.00467285;	else
-if(i<=164)error_size=0.00529449;	else
-if(i<=172)error_size=0.00575798;	else
-if(i<=180)error_size=0.0068041;	else
-if(i<=188)error_size=0.0090587;	else
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=0.00280405;	else
+if(i<=12)error_size=0.00273633;	else
+if(i<=20)error_size=0.00333868;	else
+if(i<=28)error_size=0.00304412;	else
+if(i<=36)error_size=0.00288591;	else
+if(i<=44)error_size=0.00239835;	else
+if(i<=52)error_size=0.00258283;	else
+if(i<=60)error_size=0.00235648;	else
+if(i<=68)error_size=0.00325887;	else
+if(i<=76)error_size=0.00394223;	else
+if(i<=84)error_size=0.00472291;	else
+if(i<=92)error_size=0.00490335;	else
+if(i<=100)error_size=0.00476342;	else
+if(i<=108)error_size=0.00505719;	else
+if(i<=116)error_size=0.00496699;	else
+if(i<=124)error_size=0.00476663;	else
+if(i<=132)error_size=0.00467327;	else
+if(i<=140)error_size=0.00442177;	else
+if(i<=148)error_size=0.00466679;	else
+if(i<=156)error_size=0.00467288;	else
+if(i<=164)error_size=0.00529454;	else
+if(i<=172)error_size=0.00575803;	else
+if(i<=180)error_size=0.00680414;	else
+if(i<=188)error_size=0.00905874;	else
 if(i<=196)error_size=0.0100875;	else
-if(i<=204)error_size=0.0104986;	else
-if(i<=212)error_size=0.0110027;	else
-if(i<=220)error_size=0.0105148;	else{cout<<"Same size";}
+if(i<=204)error_size=0.0104987;	else
+if(i<=212)error_size=0.0110028;	else
+if(i<=220)error_size=0.0105149;	else
+if(i<=228)error_size=0.00748501;	else
+if(i<=236)error_size=0.003355;	else
+if(i<=244)error_size=-0.00263181;	else
+if(i<=252)error_size=-0.00516093;	else
+if(i<=260)error_size=-0.00443009;	else
+{cout<<"Same size";}
 
  beamspec_bg_up1->Fill(i,error_size);
 
 }
 
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=-0.00299749;	else
-if(i<=12)error_size=-0.00292535;	else
-if(i<=20)error_size=-0.00356785;	else
-if(i<=28)error_size=-0.00325236;	else
-if(i<=36)error_size=-0.00308448;	else
-if(i<=44)error_size=-0.00256404;	else
-if(i<=52)error_size=-0.00276095;	else
-if(i<=60)error_size=-0.00251931;	else
-if(i<=68)error_size=-0.00348433;	else
-if(i<=76)error_size=-0.00421424;	else
-if(i<=84)error_size=-0.00504949;	else
-if(i<=92)error_size=-0.00524238;	else
-if(i<=100)error_size=-0.00509275;	else
-if(i<=108)error_size=-0.00540694;	else
-if(i<=116)error_size=-0.0053105;	else
-if(i<=124)error_size=-0.00509628;	else
-if(i<=132)error_size=-0.00499646;	else
-if(i<=140)error_size=-0.00472755;	else
-if(i<=148)error_size=-0.00498952;	else
-if(i<=156)error_size=-0.00499603;	else
-if(i<=164)error_size=-0.00566068;	else
-if(i<=172)error_size=-0.00615623;	else
-if(i<=180)error_size=-0.00727471;	else
-if(i<=188)error_size=-0.00968528;	else
-if(i<=196)error_size=-0.0107852;	else
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=-0.00299795;	else
+if(i<=12)error_size=-0.00292555;	else
+if(i<=20)error_size=-0.00356956;	else
+if(i<=28)error_size=-0.00325464;	else
+if(i<=36)error_size=-0.00308548;	else
+if(i<=44)error_size=-0.00256419;	else
+if(i<=52)error_size=-0.00276143;	else
+if(i<=60)error_size=-0.00251942;	else
+if(i<=68)error_size=-0.00348424;	else
+if(i<=76)error_size=-0.00421487;	else
+if(i<=84)error_size=-0.00504956;	else
+if(i<=92)error_size=-0.00524248;	else
+if(i<=100)error_size=-0.00509287;	else
+if(i<=108)error_size=-0.00540696;	else
+if(i<=116)error_size=-0.00531052;	else
+if(i<=124)error_size=-0.0050963;	else
+if(i<=132)error_size=-0.00499649;	else
+if(i<=140)error_size=-0.00472759;	else
+if(i<=148)error_size=-0.00498956;	else
+if(i<=156)error_size=-0.00499607;	else
+if(i<=164)error_size=-0.00566072;	else
+if(i<=172)error_size=-0.00615628;	else
+if(i<=180)error_size=-0.00727476;	else
+if(i<=188)error_size=-0.00968533;	else
+if(i<=196)error_size=-0.0107853;	else
 if(i<=204)error_size=-0.0112248;	else
 if(i<=212)error_size=-0.0117638;	else
-if(i<=220)error_size=-0.0112421;	else{cout<<"Same size";}
+if(i<=220)error_size=-0.0112422;	else
+if(i<=228)error_size=-0.00800273;	else
+if(i<=236)error_size=-0.00358702;	else
+if(i<=244)error_size=0.00281394;	else
+if(i<=252)error_size=0.00551801;	else
+if(i<=260)error_size=0.00473662;	else
+{cout<<"Same size";}
 
  beamspec_bg_down1->Fill(i,error_size);
 
 }
 
 
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=0.00402824;	else
-if(i<=12)error_size=0.00385267;	else
-if(i<=20)error_size=0.00659368;	else
-if(i<=28)error_size=0.00761976;	else
-if(i<=36)error_size=0.00509665;	else
-if(i<=44)error_size=0.00354126;	else
-if(i<=52)error_size=0.00453881;	else
-if(i<=60)error_size=0.00436874;	else
-if(i<=68)error_size=0.00663879;	else
-if(i<=76)error_size=0.0105587;	else
-if(i<=84)error_size=0.0130251;	else
-if(i<=92)error_size=0.0138745;	else
-if(i<=100)error_size=0.0131999;	else
-if(i<=108)error_size=0.0140603;	else
-if(i<=116)error_size=0.0137221;	else
-if(i<=124)error_size=0.01396;	else
-if(i<=132)error_size=0.0128512;	else
-if(i<=140)error_size=0.0124966;	else
-if(i<=148)error_size=0.0125833;	else
-if(i<=156)error_size=0.0124315;	else
-if(i<=164)error_size=0.0121525;	else
-if(i<=172)error_size=0.0139495;	else
-if(i<=180)error_size=0.0155867;	else
-if(i<=188)error_size=0.0174633;	else
-if(i<=196)error_size=0.0184684;	else
-if(i<=204)error_size=0.0181606;	else
-if(i<=212)error_size=0.0173438;	else
-if(i<=220)error_size=0.0150411;	else{cout<<"Same size";}
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=0.00405329;	else
+if(i<=12)error_size=0.00386146;	else
+if(i<=20)error_size=0.00667643;	else
+if(i<=28)error_size=0.00773925;	else
+if(i<=36)error_size=0.00515258;	else
+if(i<=44)error_size=0.0035471;	else
+if(i<=52)error_size=0.00456318;	else
+if(i<=60)error_size=0.00437243;	else
+if(i<=68)error_size=0.00662979;	else
+if(i<=76)error_size=0.0105942;	else
+if(i<=84)error_size=0.0130246;	else
+if(i<=92)error_size=0.0138775;	else
+if(i<=100)error_size=0.0132036;	else
+if(i<=108)error_size=0.0140611;	else
+if(i<=116)error_size=0.013723;	else
+if(i<=124)error_size=0.0139609;	else
+if(i<=132)error_size=0.0128523;	else
+if(i<=140)error_size=0.0124978;	else
+if(i<=148)error_size=0.0125847;	else
+if(i<=156)error_size=0.0124329;	else
+if(i<=164)error_size=0.012154;	else
+if(i<=172)error_size=0.0139508;	else
+if(i<=180)error_size=0.0155879;	else
+if(i<=188)error_size=0.0174642;	else
+if(i<=196)error_size=0.0184692;	else
+if(i<=204)error_size=0.0181613;	else
+if(i<=212)error_size=0.0173445;	else
+if(i<=220)error_size=0.0150418;	else
+if(i<=228)error_size=0.0107095;	else
+if(i<=236)error_size=0.00480041;	else
+if(i<=244)error_size=-0.00230374;	else
+if(i<=252)error_size=-0.00511648;	else
+if(i<=260)error_size=-0.0044473;	else
+{cout<<"Same size";}
 
  beamspec_bg_up4->Fill(i,error_size);
 
 }
 
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=-0.00430683;	else
-if(i<=12)error_size=-0.00411912;	else
-if(i<=20)error_size=-0.00704974;	else
-if(i<=28)error_size=-0.0081468;	else
-if(i<=36)error_size=-0.00544915;	else
-if(i<=44)error_size=-0.00378617;	else
-if(i<=52)error_size=-0.00485272;	else
-if(i<=60)error_size=-0.00467088;	else
-if(i<=68)error_size=-0.00709797;	else
-if(i<=76)error_size=-0.011289;	else
-if(i<=84)error_size=-0.0139261;	else
-if(i<=92)error_size=-0.0148342;	else
-if(i<=100)error_size=-0.014113;	else
-if(i<=108)error_size=-0.0150329;	else
-if(i<=116)error_size=-0.0146713;	else
-if(i<=124)error_size=-0.0149256;	else
-if(i<=132)error_size=-0.0137401;	else
-if(i<=140)error_size=-0.013361;	else
-if(i<=148)error_size=-0.0134537;	else
-if(i<=156)error_size=-0.0132914;	else
-if(i<=164)error_size=-0.0129931;	else
-if(i<=172)error_size=-0.0149144;	else
-if(i<=180)error_size=-0.0166649;	else
-if(i<=188)error_size=-0.0186712;	else
-if(i<=196)error_size=-0.019746;	else
-if(i<=204)error_size=-0.0194168;	else
-if(i<=212)error_size=-0.0185435;	else
-if(i<=220)error_size=-0.0160815;	else{cout<<"Same size";}
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=-0.00433361;	else
+if(i<=12)error_size=-0.00412851;	else
+if(i<=20)error_size=-0.00713822;	else
+if(i<=28)error_size=-0.00827456;	else
+if(i<=36)error_size=-0.00550895;	else
+if(i<=44)error_size=-0.0037924;	else
+if(i<=52)error_size=-0.00487877;	else
+if(i<=60)error_size=-0.00467483;	else
+if(i<=68)error_size=-0.00708835;	else
+if(i<=76)error_size=-0.011327;	else
+if(i<=84)error_size=-0.0139255;	else
+if(i<=92)error_size=-0.0148374;	else
+if(i<=100)error_size=-0.0141169;	else
+if(i<=108)error_size=-0.0150337;	else
+if(i<=116)error_size=-0.0146722;	else
+if(i<=124)error_size=-0.0149266;	else
+if(i<=132)error_size=-0.0137413;	else
+if(i<=140)error_size=-0.0133623;	else
+if(i<=148)error_size=-0.0134552;	else
+if(i<=156)error_size=-0.0132929;	else
+if(i<=164)error_size=-0.0129947;	else
+if(i<=172)error_size=-0.0149158;	else
+if(i<=180)error_size=-0.0166662;	else
+if(i<=188)error_size=-0.0186723;	else
+if(i<=196)error_size=-0.0197468;	else
+if(i<=204)error_size=-0.0194176;	else
+if(i<=212)error_size=-0.0185443;	else
+if(i<=220)error_size=-0.0160823;	else
+if(i<=228)error_size=-0.0114503;	else
+if(i<=236)error_size=-0.00513242;	else
+if(i<=244)error_size=0.00246318;	else
+if(i<=252)error_size=0.00547049;	else
+if(i<=260)error_size=0.00475502;	else
+{cout<<"Same size";}
 
  beamspec_bg_down4->Fill(i,error_size);
 
 }
 
 
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=0.00272412;	else
-if(i<=12)error_size=0.00254912;	else
-if(i<=20)error_size=0.00284029;	else
-if(i<=28)error_size=0.00267035;	else
-if(i<=36)error_size=0.00243211;	else
-if(i<=44)error_size=0.00217688;	else
-if(i<=52)error_size=0.00229674;	else
-if(i<=60)error_size=0.00233151;	else
-if(i<=68)error_size=0.00300775;	else
-if(i<=76)error_size=0.00362598;	else
-if(i<=84)error_size=0.00442343;	else
-if(i<=92)error_size=0.00457797;	else
-if(i<=100)error_size=0.00445481;	else
-if(i<=108)error_size=0.00467976;	else
-if(i<=116)error_size=0.00459239;	else
-if(i<=124)error_size=0.0043614;	else
-if(i<=132)error_size=0.00429879;	else
-if(i<=140)error_size=0.00403875;	else
-if(i<=148)error_size=0.00427632;	else
-if(i<=156)error_size=0.00427506;	else
-if(i<=164)error_size=0.00492252;	else
-if(i<=172)error_size=0.00529256;	else
-if(i<=180)error_size=0.00627951;	else
-if(i<=188)error_size=0.0085112;	else
-if(i<=196)error_size=0.0094918;	else
-if(i<=204)error_size=0.00990129;	else
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=0.00272456;	else
+if(i<=12)error_size=0.00254932;	else
+if(i<=20)error_size=0.00284199;	else
+if(i<=28)error_size=0.00267255;	else
+if(i<=36)error_size=0.00243309;	else
+if(i<=44)error_size=0.00217703;	else
+if(i<=52)error_size=0.00229721;	else
+if(i<=60)error_size=0.00233161;	else
+if(i<=68)error_size=0.00300768;	else
+if(i<=76)error_size=0.00362658;	else
+if(i<=84)error_size=0.00442349;	else
+if(i<=92)error_size=0.00457807;	else
+if(i<=100)error_size=0.00445492;	else
+if(i<=108)error_size=0.00467978;	else
+if(i<=116)error_size=0.00459241;	else
+if(i<=124)error_size=0.00436142;	else
+if(i<=132)error_size=0.00429882;	else
+if(i<=140)error_size=0.00403878;	else
+if(i<=148)error_size=0.00427636;	else
+if(i<=156)error_size=0.0042751;	else
+if(i<=164)error_size=0.00492256;	else
+if(i<=172)error_size=0.0052926;	else
+if(i<=180)error_size=0.00627956;	else
+if(i<=188)error_size=0.00851125;	else
+if(i<=196)error_size=0.00949185;	else
+if(i<=204)error_size=0.00990133;	else
 if(i<=212)error_size=0.010463;	else
-if(i<=220)error_size=0.0100911;	else{cout<<"Same size";}
+if(i<=220)error_size=0.0100911;	else
+if(i<=228)error_size=0.00717637;	else
+if(i<=236)error_size=0.00320443;	else
+if(i<=244)error_size=-0.00266882;	else
+if(i<=252)error_size=-0.00516622;	else
+if(i<=260)error_size=-0.00442813;	else
+{cout<<"Same size";}
 
  beamspec_bg_up2->Fill(i,error_size);
 
 }
-for(Int_t i=1;i<=220;i++){
-if(i<=4)error_size=-0.00291249;	else
-if(i<=12)error_size=-0.00272539;	else
-if(i<=20)error_size=-0.00303671;	else
-if(i<=28)error_size=-0.00285501;	else
-if(i<=36)error_size=-0.00260029;	else
-if(i<=44)error_size=-0.0023274;	else
-if(i<=52)error_size=-0.00245555;	else
-if(i<=60)error_size=-0.00249272;	else
-if(i<=68)error_size=-0.00321575;	else
-if(i<=76)error_size=-0.00387674;	else
-if(i<=84)error_size=-0.00472936;	else
-if(i<=92)error_size=-0.00489459;	else
-if(i<=100)error_size=-0.00476291;	else
-if(i<=108)error_size=-0.00500342;	else
-if(i<=116)error_size=-0.00491;	else
-if(i<=124)error_size=-0.00466303;	else
-if(i<=132)error_size=-0.00459609;	else
-if(i<=140)error_size=-0.00431806;	else
-if(i<=148)error_size=-0.00457208;	else
-if(i<=156)error_size=-0.00457072;	else
-if(i<=164)error_size=-0.00526297;	else
-if(i<=172)error_size=-0.00565861;	else
-if(i<=180)error_size=-0.00671384;	else
-if(i<=188)error_size=-0.00909991;	else
-if(i<=196)error_size=-0.0101483;	else
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
+if(i<=4)error_size=-0.00291297;	else
+if(i<=12)error_size=-0.00272561;	else
+if(i<=20)error_size=-0.00303851;	else
+if(i<=28)error_size=-0.00285736;	else
+if(i<=36)error_size=-0.00260133;	else
+if(i<=44)error_size=-0.00232756;	else
+if(i<=52)error_size=-0.00245605;	else
+if(i<=60)error_size=-0.00249284;	else
+if(i<=68)error_size=-0.00321567;	else
+if(i<=76)error_size=-0.00387738;	else
+if(i<=84)error_size=-0.00472942;	else
+if(i<=92)error_size=-0.00489469;	else
+if(i<=100)error_size=-0.00476303;	else
+if(i<=108)error_size=-0.00500344;	else
+if(i<=116)error_size=-0.00491003;	else
+if(i<=124)error_size=-0.00466306;	else
+if(i<=132)error_size=-0.00459613;	else
+if(i<=140)error_size=-0.0043181;	else
+if(i<=148)error_size=-0.00457212;	else
+if(i<=156)error_size=-0.00457077;	else
+if(i<=164)error_size=-0.00526302;	else
+if(i<=172)error_size=-0.00565866;	else
+if(i<=180)error_size=-0.00671388;	else
+if(i<=188)error_size=-0.00909996;	else
+if(i<=196)error_size=-0.0101484;	else
 if(i<=204)error_size=-0.0105862;	else
-if(i<=212)error_size=-0.0111867;	else
-if(i<=220)error_size=-0.0107891;	else{cout<<"Same size";}
+if(i<=212)error_size=-0.0111868;	else
+if(i<=220)error_size=-0.0107891;	else
+if(i<=228)error_size=-0.00767274;	else
+if(i<=236)error_size=-0.00342603;	else
+if(i<=244)error_size=0.00285352;	else
+if(i<=252)error_size=0.00552367;	else
+if(i<=260)error_size=0.00473453;	else{cout<<"Same size";}
 
  beamspec_bg_down2->Fill(i,error_size);
 
 }
 
 
-for(Int_t i=1;i<=220;i++){
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
 
-if(i<=4)error_size=-0.00199127;	else
-if(i<=16)error_size=-0.00214161;	else
-if(i<=28)error_size=-0.00238241;	else
-if(i<=40)error_size=-0.00240578;	else
-if(i<=52)error_size=-0.00247291;	else
-if(i<=64)error_size=-0.00263827;	else
-if(i<=76)error_size=-0.00273896;	else
-if(i<=88)error_size=-0.00292077;	else
-if(i<=100)error_size=-0.00312058;	else
-if(i<=112)error_size=-0.00318233;	else
-if(i<=124)error_size=-0.00330692;	else
-if(i<=136)error_size=-0.00352949;	else
-if(i<=148)error_size=-0.00345355;	else
-if(i<=160)error_size=-0.00395572;	else
-if(i<=172)error_size=-0.00396147;	else
-if(i<=184)error_size=-0.00421733;	else
-if(i<=196)error_size=-0.0044173;	else
-if(i<=208)error_size=-0.00468491;	else
-if(i<=220)error_size=-0.0048324;	else {cout<<"Same size";}
+if(i<=4)error_size=-0.00190277;	else
+if(i<=16)error_size=-0.00210895;	else
+if(i<=28)error_size=-0.00235467;	else
+if(i<=40)error_size=-0.00240303;	else
+if(i<=52)error_size=-0.00256453;	else
+if(i<=64)error_size=-0.00265161;	else
+if(i<=76)error_size=-0.00281178;	else
+if(i<=88)error_size=-0.00292928;	else
+if(i<=100)error_size=-0.00308231;	else
+if(i<=112)error_size=-0.0031653;	else
+if(i<=124)error_size=-0.00351855;	else
+if(i<=136)error_size=-0.00348562;	else
+if(i<=148)error_size=-0.00363181;	else
+if(i<=160)error_size=-0.0038753;	else
+if(i<=172)error_size=-0.00390835;	else
+if(i<=184)error_size=-0.00420119;	else
+if(i<=196)error_size=-0.00438232;	else
+if(i<=208)error_size=-0.00466582;	else
+if(i<=220)error_size=-0.00484375;	else
+if(i<=232)error_size=-0.00532534;	else
+if(i<=244)error_size=-0.00558795;	else
+if(i<=256)error_size=-0.00539484;	else{cout<<"Same size";}
 
 
 if (OPvector==true){
@@ -745,28 +848,32 @@ beamspec_sig_up->Fill(i,error_size);
 
 }
 
-for(Int_t i=1;i<=220;i++){
+//for(Int_t i=1;i<=220;i++){
+for(Int_t i=1;i<=256;i++){
 
 
-if(i<=4)error_size=0.0021291;	else
-if(i<=16)error_size=0.00228983;	else
-if(i<=28)error_size=0.00254729;	else
-if(i<=40)error_size=0.00257227;	else
-if(i<=52)error_size=0.00264405;	else
-if(i<=64)error_size=0.00282085;	else
-if(i<=76)error_size=0.0029285;	else
-if(i<=88)error_size=0.00312289;	else
-if(i<=100)error_size=0.00333652;	else
-if(i<=112)error_size=0.00340255;	else
-if(i<=124)error_size=0.00353576;	else
-if(i<=136)error_size=0.00377372;	else
-if(i<=148)error_size=0.00369253;	else
-if(i<=160)error_size=0.00422943;	else
-if(i<=172)error_size=0.00423558;	else
-if(i<=184)error_size=0.00450914;	else
-if(i<=196)error_size=0.00472295;	else
-if(i<=208)error_size=0.00500906;	else
-if(i<=220)error_size=0.00516676;	else {cout<<"Same size";}
+if(i<=4)error_size=0.00203447;	else
+if(i<=16)error_size=0.00225491;	else
+if(i<=28)error_size=0.00251763;	else
+if(i<=40)error_size=0.00256933;	else
+if(i<=52)error_size=0.00274201;	else
+if(i<=64)error_size=0.00283511;	else
+if(i<=76)error_size=0.00300636;	else
+if(i<=88)error_size=0.00313199;	else
+if(i<=100)error_size=0.0032956;	else
+if(i<=112)error_size=0.00338433;	else
+if(i<=124)error_size=0.00376202;	else
+if(i<=136)error_size=0.00372682;	else
+if(i<=148)error_size=0.00388312;	else
+if(i<=160)error_size=0.00414346;	else
+if(i<=172)error_size=0.00417878;	else
+if(i<=184)error_size=0.00449189;	else
+if(i<=196)error_size=0.00468555;	else
+if(i<=208)error_size=0.00498865;	else
+if(i<=220)error_size=0.0051789;	else
+if(i<=232)error_size=0.00569381;	else
+if(i<=244)error_size=0.00597457;	else
+if(i<=256)error_size=0.00576811;	else{cout<<"Same size";}
 
 
 if (OPvector==true){

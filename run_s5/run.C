@@ -1,6 +1,4 @@
 // How to run : root -l run.C
-
-
 {
   TString topDirPath(gSystem->GetFromPipe("echo $MPDIR")); // MPDIR should be defined in an init script.
   TString MacroPath1(topDirPath+"/macros/eventselection.C");

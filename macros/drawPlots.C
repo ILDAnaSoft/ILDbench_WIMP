@@ -1,3 +1,5 @@
+#include "util.C"
+
 void drawPlots(TString fname)
 { 
   TFile* fin = new TFile(fname.Data());
@@ -11,10 +13,10 @@ void drawPlots(TString fname)
   float xs_bhabhangRR = getXsec("bhabhang.eR.pR");
 
   const float L = 500.; 
-  const float epol = 0.8;
-  const float ppol = 0.3;
+  const float epol = 0.0;
+  const float ppol = 0.0;
   enum POL { LL, LR, RL, RR };
-  float pfrac[4];
+  float pfrac[4]; // with luminocity sharing fraction.
   pfrac[LL] = 0.1 * L * (1-epol) * (1-ppol) / 4.;
   pfrac[LR] = 0.4 * L * (1-epol) * (1+ppol) / 4.;
   pfrac[RL] = 0.4 * L * (1+epol) * (1-ppol) / 4.;
@@ -63,17 +65,22 @@ void drawPlots(TString fname)
   hNrecNgen_photon_nungSum->Add(hNrecNgen_photon_nungRL,w_nung_RL);
   TH1F* hNrecNgenEmc_photon_nungLR    = static_cast<TH1F*>(fin->Get("hNrecNgenEmc_photon_nungLR"));
   TH1F* hNrecNgenEmc_photon_nungRL    = static_cast<TH1F*>(fin->Get("hNrecNgenEmc_photon_nungRL"));
-  const int xbins_e = 100;
-  float xmin_e = 0.;
-  float xmax_e = 250.;
+  //const int xbins_e = 100;
+  //float xmin_e = 0.;
+  //float xmax_e = 250.;
+  const int nxbins_e = 17;
+  const double xbins_e[nxbins_e] = {0,5,10,15,20,25,30,35,40,45,50,70,90,120,150,200,250};
   const int ybins_e = 100;
   float ymin_e = 0.;
   float ymax_e = 8.;
-  TH2F* hNrecNgenEmc_photon_nungSum   = new TH2F("hNrecNgenEmc_photon_nungSum",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",xbins_e,xmin_e,xmax_e,ybins_e,ymin_e,ymax_e);
+  //TH2F* hNrecNgenEmc_photon_nungSum   = new TH2F("hNrecNgenEmc_photon_nungSum",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",xbins_e,xmin_e,xmax_e,ybins_e,ymin_e,ymax_e);
+  TH2F* hNrecNgenEmc_photon_nungSum   = new TH2F("hNrecNgenEmc_photon_nungSum",";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}",nxbins_e-1,xbins_e,ybins_e,ymin_e,ymax_e);
   hNrecNgenEmc_photon_nungSum->Add(hNrecNgenEmc_photon_nungLR); // no need to normalize.
   hNrecNgenEmc_photon_nungSum->Add(hNrecNgenEmc_photon_nungRL); // no need to normalize. 
-  double x_e[xbins_e], xerr_e[xbins_e], y_e[xbins_e], yerr_e[xbins_e];
-  for (int ix = 1; ix <= xbins_e; ix++) {
+  //double x_e[xbins_e], xerr_e[xbins_e], y_e[xbins_e], yerr_e[xbins_e];
+  double x_e[nxbins_e], xerr_e[nxbins_e], y_e[nxbins_e], yerr_e[nxbins_e];
+  //for (int ix = 1; ix <= xbins_e; ix++) {
+  for (int ix = 1; ix <= nxbins_e; ix++) {
     x_e[ix-1] = hNrecNgenEmc_photon_nungSum->GetXaxis()->GetBinCenter(ix);
     xerr_e[ix-1] = hNrecNgenEmc_photon_nungSum->GetXaxis()->GetBinWidth(ix)/TMath::Sqrt(12);
     TH1F h_y_e("h_y_e","",ybins_e,ymin_e,ymax_e);
@@ -85,7 +92,8 @@ void drawPlots(TString fname)
     y_e[ix-1] = h_y_e.GetMean();
     yerr_e[ix-1] = h_y_e.GetRMS() / TMath::Sqrt(h_y_e.GetEntries());
   }
-  TGraphErrors* gNrecNgenEmc_photon_nungSum = new TGraphErrors(xbins_e,x_e,y_e,xerr_e,yerr_e);
+  //TGraphErrors* gNrecNgenEmc_photon_nungSum = new TGraphErrors(xbins_e,x_e,y_e,xerr_e,yerr_e);
+  TGraphErrors* gNrecNgenEmc_photon_nungSum = new TGraphErrors(nxbins_e,x_e,y_e,xerr_e,yerr_e);
   gNrecNgenEmc_photon_nungSum->SetTitle(";E_{#gamma,MC} [GeV/c];#bar{N_{rec}/N_{gen}}");
   
   // photon reco efficiency w.r.t. cos(theta)
@@ -94,7 +102,7 @@ void drawPlots(TString fname)
   const int xbins_cos = 100;
   float xmin_cos = 0.;
   float xmax_cos = 1.;
-  const int ybins_cos = 100;
+  const int ybins_cos = 8;
   float ymin_cos = 0.;
   float ymax_cos = 8.;
   TH2F* hNrecNgenCostheta_photon_nungSum   = new TH2F("hNrecNgenCostheta_photon_nungSum",";cos#theta_{#gamma,MC};#bar{N_{rec}/N_{gen}}",xbins_cos,xmin_cos,xmax_cos,ybins_cos,ymin_cos,ymax_cos);
@@ -182,32 +190,32 @@ void drawPlots(TString fname)
   hE_neutron_nungSum_ol->Add(hE_neutron_nungRL_ol,w_nung_RL);
   TH1F* hE_electron_nungLR_rest           = static_cast<TH1F*>(fin->Get("hE_electron_nungLR_rest"));
   TH1F* hE_electron_nungRL_rest           = static_cast<TH1F*>(fin->Get("hE_electron_nungRL_rest"));
-  TH1F* hE_electron_nungSum_rest          = new TH1F("hE_electron_nungSum_rest",";E [GeV];",350,0,350);
+  TH1F* hE_electron_nungSum_rest          = new TH1F("hE_electron_nungSum_rest",";E [GeV];",50,0,50);
   hE_electron_nungSum_rest->Add(hE_electron_nungLR_rest,w_nung_LR);
   hE_electron_nungSum_rest->Add(hE_electron_nungRL_rest,w_nung_RL);
   TH1F* hE_electron_nungLR_ol             = static_cast<TH1F*>(fin->Get("hE_electron_nungLR_ol"));
   TH1F* hE_electron_nungRL_ol             = static_cast<TH1F*>(fin->Get("hE_electron_nungRL_ol"));
-  TH1F* hE_electron_nungSum_ol          = new TH1F("hE_electron_nungSum_ol",";E [GeV];",350,0,350);
+  TH1F* hE_electron_nungSum_ol          = new TH1F("hE_electron_nungSum_ol",";E [GeV];",50,0,50);
   hE_electron_nungSum_ol->Add(hE_electron_nungLR_ol,w_nung_LR);
   hE_electron_nungSum_ol->Add(hE_electron_nungRL_ol,w_nung_RL);
   TH1F* hE_muon_nungLR_rest           = static_cast<TH1F*>(fin->Get("hE_muon_nungLR_rest"));
   TH1F* hE_muon_nungRL_rest           = static_cast<TH1F*>(fin->Get("hE_muon_nungRL_rest"));
-  TH1F* hE_muon_nungSum_rest          = new TH1F("hE_muon_nungSum_rest",";E [GeV];",350,0,350);
+  TH1F* hE_muon_nungSum_rest          = new TH1F("hE_muon_nungSum_rest",";E [GeV];",50,0,50);
   hE_muon_nungSum_rest->Add(hE_muon_nungLR_rest,w_nung_LR);
   hE_muon_nungSum_rest->Add(hE_muon_nungRL_rest,w_nung_RL);
   TH1F* hE_muon_nungLR_ol             = static_cast<TH1F*>(fin->Get("hE_muon_nungLR_ol"));
   TH1F* hE_muon_nungRL_ol             = static_cast<TH1F*>(fin->Get("hE_muon_nungRL_ol"));
-  TH1F* hE_muon_nungSum_ol          = new TH1F("hE_muon_nungSum_ol",";E [GeV];",350,0,350);
+  TH1F* hE_muon_nungSum_ol          = new TH1F("hE_muon_nungSum_ol",";E [GeV];",50,0,50);
   hE_muon_nungSum_ol->Add(hE_muon_nungLR_ol,w_nung_LR);
   hE_muon_nungSum_ol->Add(hE_muon_nungRL_ol,w_nung_RL);
   TH1F* hE_pion_nungLR_rest           = static_cast<TH1F*>(fin->Get("hE_pion_nungLR_rest"));
   TH1F* hE_pion_nungRL_rest           = static_cast<TH1F*>(fin->Get("hE_pion_nungRL_rest"));
-  TH1F* hE_pion_nungSum_rest          = new TH1F("hE_pion_nungSum_rest",";E [GeV];",350,0,350);
+  TH1F* hE_pion_nungSum_rest          = new TH1F("hE_pion_nungSum_rest",";E [GeV];",50,0,50);
   hE_pion_nungSum_rest->Add(hE_pion_nungLR_rest,w_nung_LR);
   hE_pion_nungSum_rest->Add(hE_pion_nungRL_rest,w_nung_RL);
   TH1F* hE_pion_nungLR_ol             = static_cast<TH1F*>(fin->Get("hE_pion_nungLR_ol"));
   TH1F* hE_pion_nungRL_ol             = static_cast<TH1F*>(fin->Get("hE_pion_nungRL_ol"));
-  TH1F* hE_pion_nungSum_ol          = new TH1F("hE_pion_nungSum_ol",";E [GeV];",350,0,350);
+  TH1F* hE_pion_nungSum_ol          = new TH1F("hE_pion_nungSum_ol",";E [GeV];",50,0,50);
   hE_pion_nungSum_ol->Add(hE_pion_nungLR_ol,w_nung_LR);
   hE_pion_nungSum_ol->Add(hE_pion_nungRL_ol,w_nung_RL);
 
@@ -389,7 +397,7 @@ void drawPlots(TString fname)
   TH1F* hE_electron_bhabhangLR_rest             = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangLR_rest"));
   TH1F* hE_electron_bhabhangRL_rest             = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangRL_rest"));
   TH1F* hE_electron_bhabhangRR_rest             = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangRR_rest"));
-  TH1F* hE_electron_bhabhangSum_rest            = new TH1F("hE_electron_bhabhangSum_rest" ,";E [GeV];",350,0,350);
+  TH1F* hE_electron_bhabhangSum_rest            = new TH1F("hE_electron_bhabhangSum_rest" ,";E [GeV];",50,0,50);
   hE_electron_bhabhangSum_rest->Add(hE_electron_bhabhangLL_rest,w_bhabhang_LL);
   hE_electron_bhabhangSum_rest->Add(hE_electron_bhabhangLR_rest,w_bhabhang_LR);
   hE_electron_bhabhangSum_rest->Add(hE_electron_bhabhangRL_rest,w_bhabhang_RL);
@@ -399,7 +407,7 @@ void drawPlots(TString fname)
   TH1F* hE_electron_bhabhangLR_ol               = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangLR_ol"));
   TH1F* hE_electron_bhabhangRL_ol               = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangRL_ol"));
   TH1F* hE_electron_bhabhangRR_ol               = static_cast<TH1F*>(fin->Get("hE_electron_bhabhangRR_ol"));
-  TH1F* hE_electron_bhabhangSum_ol              = new TH1F("hE_electron_bhabhangSum_ol" ,";E [GeV];",350,0,350);
+  TH1F* hE_electron_bhabhangSum_ol              = new TH1F("hE_electron_bhabhangSum_ol" ,";E [GeV];",50,0,50);
   hE_electron_bhabhangSum_ol->Add(hE_electron_bhabhangLL_ol,w_bhabhang_LL);
   hE_electron_bhabhangSum_ol->Add(hE_electron_bhabhangLR_ol,w_bhabhang_LR);
   hE_electron_bhabhangSum_ol->Add(hE_electron_bhabhangRL_ol,w_bhabhang_RL);
@@ -409,7 +417,7 @@ void drawPlots(TString fname)
   TH1F* hE_muon_bhabhangLR_rest             = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangLR_rest"));
   TH1F* hE_muon_bhabhangRL_rest             = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangRL_rest"));
   TH1F* hE_muon_bhabhangRR_rest             = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangRR_rest"));
-  TH1F* hE_muon_bhabhangSum_rest            = new TH1F("hE_muon_bhabhangSum_rest" ,";E [GeV];",350,0,350);
+  TH1F* hE_muon_bhabhangSum_rest            = new TH1F("hE_muon_bhabhangSum_rest" ,";E [GeV];",50,0,50);
   hE_muon_bhabhangSum_rest->Add(hE_muon_bhabhangLL_rest,w_bhabhang_LL);
   hE_muon_bhabhangSum_rest->Add(hE_muon_bhabhangLR_rest,w_bhabhang_LR);
   hE_muon_bhabhangSum_rest->Add(hE_muon_bhabhangRL_rest,w_bhabhang_RL);
@@ -419,7 +427,7 @@ void drawPlots(TString fname)
   TH1F* hE_muon_bhabhangLR_ol               = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangLR_ol"));
   TH1F* hE_muon_bhabhangRL_ol               = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangRL_ol"));
   TH1F* hE_muon_bhabhangRR_ol               = static_cast<TH1F*>(fin->Get("hE_muon_bhabhangRR_ol"));
-  TH1F* hE_muon_bhabhangSum_ol              = new TH1F("hE_muon_bhabhangSum_ol" ,";E [GeV];",350,0,350);
+  TH1F* hE_muon_bhabhangSum_ol              = new TH1F("hE_muon_bhabhangSum_ol" ,";E [GeV];",50,0,50);
   hE_muon_bhabhangSum_ol->Add(hE_muon_bhabhangLL_ol,w_bhabhang_LL);
   hE_muon_bhabhangSum_ol->Add(hE_muon_bhabhangLR_ol,w_bhabhang_LR);
   hE_muon_bhabhangSum_ol->Add(hE_muon_bhabhangRL_ol,w_bhabhang_RL);
@@ -430,7 +438,7 @@ void drawPlots(TString fname)
   TH1F* hE_pion_bhabhangLR_rest             = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangLR_rest"));
   TH1F* hE_pion_bhabhangRL_rest             = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangRL_rest"));
   TH1F* hE_pion_bhabhangRR_rest             = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangRR_rest"));
-  TH1F* hE_pion_bhabhangSum_rest            = new TH1F("hE_pion_bhabhangSum_rest" ,";E [GeV];",350,0,350);
+  TH1F* hE_pion_bhabhangSum_rest            = new TH1F("hE_pion_bhabhangSum_rest" ,";E [GeV];",50,0,50);
   hE_pion_bhabhangSum_rest->Add(hE_pion_bhabhangLL_rest,w_bhabhang_LL);
   hE_pion_bhabhangSum_rest->Add(hE_pion_bhabhangLR_rest,w_bhabhang_LR);
   hE_pion_bhabhangSum_rest->Add(hE_pion_bhabhangRL_rest,w_bhabhang_RL);
@@ -440,7 +448,7 @@ void drawPlots(TString fname)
   TH1F* hE_pion_bhabhangLR_ol               = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangLR_ol"));
   TH1F* hE_pion_bhabhangRL_ol               = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangRL_ol"));
   TH1F* hE_pion_bhabhangRR_ol               = static_cast<TH1F*>(fin->Get("hE_pion_bhabhangRR_ol"));
-  TH1F* hE_pion_bhabhangSum_ol              = new TH1F("hE_pion_bhabhangSum_ol" ,";E [GeV];",350,0,350);
+  TH1F* hE_pion_bhabhangSum_ol              = new TH1F("hE_pion_bhabhangSum_ol" ,";E [GeV];",50,0,50);
   hE_pion_bhabhangSum_ol->Add(hE_pion_bhabhangLL_ol,w_bhabhang_LL);
   hE_pion_bhabhangSum_ol->Add(hE_pion_bhabhangLR_ol,w_bhabhang_LR);
   hE_pion_bhabhangSum_ol->Add(hE_pion_bhabhangRL_ol,w_bhabhang_RL);
@@ -516,6 +524,26 @@ void drawPlots(TString fname)
   hE_bcal_bhabhangSum->Add(hE_bcal_bhabhangRL,w_bhabhang_RL);
   hE_bcal_bhabhangSum->Add(hE_bcal_bhabhangRR,w_bhabhang_RR);
 
+  TH1F* hCutStats_nungSum = new TH1F("hCutStats_nungSum",";;",5,0,5);
+  hCutStats_nungSum->GetXaxis()->SetBinLabel(1,"No cut"); 
+  hCutStats_nungSum->GetXaxis()->SetBinLabel(2,"Sig. def."); 
+  hCutStats_nungSum->GetXaxis()->SetBinLabel(3,"Pt cut"); 
+  hCutStats_nungSum->GetXaxis()->SetBinLabel(4,"E cut"); 
+  hCutStats_nungSum->GetXaxis()->SetBinLabel(5,"Bcal veto"); 
+  TH1F* hCutStats_bhabhangSum = new TH1F("hCutStats_bhabhangSum","",5,0,5);
+  hCutStats_bhabhangSum->GetXaxis()->SetBinLabel(1,"No cut"); 
+  hCutStats_bhabhangSum->GetXaxis()->SetBinLabel(2,"Sig. def."); 
+  hCutStats_bhabhangSum->GetXaxis()->SetBinLabel(3,"Pt cut"); 
+  hCutStats_bhabhangSum->GetXaxis()->SetBinLabel(4,"E cut"); 
+  hCutStats_bhabhangSum->GetXaxis()->SetBinLabel(5,"Bcal veto"); 
+  hCutStats_nungSum->Add(hCutStats_nungLR,w_nung_LR);
+  hCutStats_nungSum->Add(hCutStats_nungRL,w_nung_RL);
+  hCutStats_bhabhangSum->Add(hCutStats_bhabhangLL,w_bhabhang_LL);
+  hCutStats_bhabhangSum->Add(hCutStats_bhabhangLR,w_bhabhang_LR);
+  hCutStats_bhabhangSum->Add(hCutStats_bhabhangRL,w_bhabhang_RL);
+  hCutStats_bhabhangSum->Add(hCutStats_bhabhangRR,w_bhabhang_RR);
+//
+  // Set histogram styles
   hPt_ep_nungSum_isr->SetFillColor(kAzure+6);
   hPt_ep_nungSum_ol->SetFillColor(kYellow+1);
   hPt_ep_nungSum_other->SetFillColor(kGreen+3);
@@ -542,6 +570,7 @@ void drawPlots(TString fname)
   hPtMax_bcal_bcalcoord_nungSum->SetFillColor(kGreen+3); 
   hPt_bcal_nungSum->SetFillColor(kGreen+3); 
   hE_bcal_nungSum->SetFillColor(kGreen+3); 
+  hCutStats_nungSum->SetFillColor(kGreen+3); 
 
   hPt_ep_bhabhangSum_isr->SetFillColor(kOrange+4);
   hPt_ep_bhabhangSum_ol->SetFillColor(kMagenta+1);
@@ -569,6 +598,7 @@ void drawPlots(TString fname)
   hPtMax_bcal_bcalcoord_bhabhangSum->SetFillColor(kOrange+6); 
   hPt_bcal_bhabhangSum->SetFillColor(kOrange+6); 
   hE_bcal_bhabhangSum->SetFillColor(kOrange+6); 
+  hCutStats_bhabhangSum->SetFillColor(kOrange+6); 
 
   TCanvas* c1 = new TCanvas("c1","",600,400);
   gPad->SetLogy();
@@ -904,13 +934,13 @@ void drawPlots(TString fname)
 
   TCanvas* c14 = new TCanvas("c14","",600,400);
   gNrecNgenEmc_photon_nungSum->GetXaxis()->SetRangeUser(0.,250.);
-  gNrecNgenEmc_photon_nungSum->GetYaxis()->SetRangeUser(0.99,1.03);
+  gNrecNgenEmc_photon_nungSum->GetYaxis()->SetRangeUser(0.99,1.10);
   gNrecNgenEmc_photon_nungSum->Draw("ap");
 
   TCanvas* c15 = new TCanvas("c15","",600,400);
   gNrecNgenCostheta_photon_nungSum->Draw("ap");
   gNrecNgenCostheta_photon_nungSum->GetXaxis()->SetRangeUser(0.,1.);
-  gNrecNgenCostheta_photon_nungSum->GetYaxis()->SetRangeUser(0.99,1.15);
+  gNrecNgenCostheta_photon_nungSum->GetYaxis()->SetRangeUser(0.95,1.15);
 
   TCanvas* c16 = new TCanvas("c16","",600,400);
   THStack* hPt_bcal_bcalcoord_all = new THStack("hPt_bcal_bcalcoord_all",";Pt [GeV];");
@@ -996,6 +1026,15 @@ void drawPlots(TString fname)
   leg_c19->AddEntry(hE_bcal_nungSum,     "#nu#nu+N#gamma" ,"f");
   leg_c19->Draw();
 
+  TCanvas* c20 = new TCanvas("c20","",600,400);
+  THStack* hCutStats_all = new THStack("hCutStats_all","");
+  //hCutStats_nungSum->Draw();
+  hCutStats_all->Add(hCutStats_nungSum);
+  hCutStats_all->Add(hCutStats_bhabhangSum);
+  hCutStats_all->Draw();
+  gPad->Modified();
+  
+
   c1->Print("c1.pdf");
   c2->Print("c2.pdf");
   c3->Print("c3.pdf");
@@ -1006,7 +1045,9 @@ void drawPlots(TString fname)
   c8->Print("c8.pdf");
   c9->Print("c9.pdf");
   c10->Print("c10.pdf");
-  c11->Print("c11.pdf");
+  //c11->Print("c11.pdf");
+  c11->Print("BCalVeto.pdf");
+  c11->Print("BCalVeto.C");
   c12->Print("c12.pdf");
   c13->Print("c13.pdf");
   c14->Print("c14.pdf");
@@ -1015,5 +1056,6 @@ void drawPlots(TString fname)
   c17->Print("c17.pdf");
   c18->Print("c18.pdf");
   c19->Print("c19.pdf");
+  c20->Print("c20.pdf");
 #endif
 }

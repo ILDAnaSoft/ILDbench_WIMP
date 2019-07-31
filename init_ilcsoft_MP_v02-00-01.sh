@@ -66,6 +66,7 @@ export MARLIN_DLL="/cvmfs/ilc.desy.de/sw/x86_64_gcc49_sl6/v02-00-01/MarlinDD4hep
 
 export MPDIR="$PWD"
 export MARLIN_DLL="$MPDIR/source/lib/libMonoPhotonProcessors.so:$MARLIN_DLL"
+export LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH}
 
 #--------------------------------------------------------------------------------
 #     CLHEP
@@ -253,3 +254,4 @@ test -r ${G4ENV_INIT} && { cd $(dirname ${G4ENV_INIT}) ; . ./$(basename ${G4ENV_
 
 # ---  Workaraund for OpenGl bug on SL6  ---
 export LIBGL_ALWAYS_INDIRECT=1
+

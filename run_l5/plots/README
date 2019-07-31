@@ -1,11 +1,14 @@
 Prepartion:
 Several macro files in ILDbench_WIMP/macros are used in
-runDraw.C and runMakeSigAndBkgDist.C. You have to modify
-the include file path with accordance with your environment.
+runDraw.C and runMakeSigAndBkgDist.C.
+Those macros are automatically loaded as described in rootlogon.C.
 
-(Originally it was designed so that it works without any modification
-by using gROOT->LoadMacro(), but it became to be inconvenient 
-when we made the macro to have a input argument for mass scan run.)
+Limit calculation for H20 senario:
+This requires running runMakeSigAndBkgDist.C beforehand.
+Move to tsys_H20_vector(axialvector/scalar).
+make TSysLimit  (This compiles TSysLimit_search.C.)
+python submitMassScan.py
 
-aux directory includes some auxiiary files prepared by Moritz.
-These are necessary to run runMakeSigAndBkgDist.C.
+Plot the result:
+root -l plot_sensitivity.C
+

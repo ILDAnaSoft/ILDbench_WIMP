@@ -247,6 +247,8 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
             _data.mcp_pdg[i]   = p->getPDG();
             _data.mcp_genstatus[i] = p->getGeneratorStatus();
             _data.mcp_simstatus[i] = p->getSimulatorStatus();
+            _data.mcp_isDecayedInTracker[i] = p->isDecayedInTracker();
+            _data.mcp_isDecayedInCalorimeter[i] = p->isDecayedInCalorimeter();
             _data.mcp_iscreatedinsim[i] = p->isCreatedInSimulation();
             _data.mcp_isoverlay[i] = p->isOverlay();
             _data.mcp_hasLeftDetector[i] = p->hasLeftDetector();
@@ -502,6 +504,7 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
              _data.bcal_theta[i] = TMath::ACos(pv.Z()/pv.Mag()); 
              TLorentzVector lpv(pv,p->getEnergy());
              lpv.Boost(_beta);
+             _data.bcal_theta_bcalcoord[i] = TMath::ACos(lpv.Z()/lpv.Vect().Mag()); 
              _data.bcal_phi_bcalcoord[i] = lpv.Phi(); 
              _data.bcal_px_bcalcoord[i] = lpv.Px(); 
              _data.bcal_pt_bcalcoord[i] = lpv.Pt(); 
@@ -523,6 +526,11 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
 
     _evtdata->Fill(); 
 //std::cerr << "End Event " << std::endl;
+#if 0
+if (_data.ptmaxphoton_e > 500. ) {
+  std::cerr << "### ptmaxphoton = " << _data.ptmaxphoton_e << " evt = " << _nEvt << std::endl;
+}
+#endif
 
 }
 
@@ -671,6 +679,8 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "mcp_daughterIndex" , &d.mcp_daughterIndex , "mcp_daughterIndex[nmcps][10]/I" );
   _evtdata->Branch( "mcp_genstatus"   , &d.mcp_genstatus   , "mcp_genstatus[nmcps]/I");
   _evtdata->Branch( "mcp_simstatus"   , &d.mcp_simstatus   , "mcp_simstatus[nmcps]/I");
+  _evtdata->Branch( "mcp_isDecayedInTracker" , &d.mcp_isDecayedInTracker , "mcp_isDecayedInTracker[nmcps]/O");
+  _evtdata->Branch( "mcp_isDecayedInCalorimeter" , &d.mcp_isDecayedInCalorimeter , "mcp_isDecayedInCalorimeter[nmcps]/O");
   _evtdata->Branch( "mcp_iscreatedinsim"   , &d.mcp_iscreatedinsim   , "mcp_iscreatedinsim[nmcps]/O");
   _evtdata->Branch( "mcp_isoverlay"   , &d.mcp_isoverlay   , "mcp_isoverlay[nmcps]/O");
   _evtdata->Branch( "mcp_hasLeftDetector"   , &d.mcp_hasLeftDetector   , "mcp_hasLeftDetector[nmcps]/O");
@@ -696,6 +706,7 @@ void MonoPhotonProcessor::makeNTuple() {
   _evtdata->Branch( "bcal_x_bcalcoord" , &d.bcal_x_bcalcoord , "bcal_x_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_r_bcalcoord" , &d.bcal_r_bcalcoord , "bcal_r_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_phi_bcalcoord" , &d.bcal_phi_bcalcoord , "bcal_phi_bcalcoord[nbcalclrs]"     );
+  _evtdata->Branch( "bcal_theta_bcalcoord" , &d.bcal_theta_bcalcoord , "bcal_theta_bcalcoord[nbcalclrs]"     );
   _evtdata->Branch( "bcal_px_bcalcoord", &d.bcal_px_bcalcoord, "bcal_px_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_pt_bcalcoord", &d.bcal_pt_bcalcoord, "bcal_pt_bcalcoord[nbcalclrs]");
   _evtdata->Branch( "bcal_e_bcalcoord", &d.bcal_e_bcalcoord, "bcal_e_bcalcoord[nbcalclrs]");

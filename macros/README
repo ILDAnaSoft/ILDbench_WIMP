@@ -1,0 +1,2 @@
+aux directory includes some auxiiary files prepared by Moritz.
+These are necessary to run makeSigAndBkgDist.C, which is invoked by runMakeSigAndBkgDist.C.
