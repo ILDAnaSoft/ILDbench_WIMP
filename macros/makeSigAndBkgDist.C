@@ -125,7 +125,7 @@ void makeSigAndBkgDist(TString fname = "plots.root", double mass = 1)
           _alpha_em = 0.00781750809112087431;
           stringstream hname;
           hname << "DsigmadE_WIMP_ph" << ph << ends; 
-          h_WIMPdsigmadE[ph] = new TH2D(hname.str().data(),"DsigmadE_WIMP;E[GeV];d#sigma /dE [fb]",250,0.5,250.5,502,0,502);
+          h_WIMPdsigmadE[ph] = new TH2D(hname.str().data(),"DsigmadE_WIMP;E^{*}_{#gamma}[GeV];#sqrt{s^{*}}",250,0.5,250.5,502,0,502);
 
           // call DsigmaE_WIMP_new function defined in WIMP_functions.C
           DsigmadE_WIMP_new(h_WIMPdsigmadE[ph],500.0,cos_cut_7,optype,ptmin,e_thresh);
@@ -133,7 +133,7 @@ void makeSigAndBkgDist(TString fname = "plots.root", double mass = 1)
         const double cos_cut = 0.999992; // FIXME Why not cos_cut_7?
         const double ptmin2 = 0.0;
         const double e_thresh2 = 0.0;
-        TH2D* h_WIMPdsigmadE_largerTH = new TH2D("DsigmadE_WIMP_largerTH","DsigmadE_WIMP_largerTH;E[GeV];d#sigma /dE [fb]",250,0.5,250.5,502,0,502);
+        TH2D* h_WIMPdsigmadE_largerTH = new TH2D("DsigmadE_WIMP_largerTH","DsigmadE_WIMP_largerTH;E^{*}_{#gamma}[GeV];#sqrt{s^{*}}",250,0.5,250.5,502,0,502);
         DsigmadE_WIMP_new2(h_WIMPdsigmadE_largerTH,500.0,cos_cut,optype,ptmin2,e_thresh2);
 
         // Reading MC samples
